@@ -48,6 +48,7 @@ public class JumpingBurger extends WallpaperService {
         private final int androidSpeed = 5;
         private final int androidRunningTime = 3000;
         private final int textureID = R.drawable.burger;
+        private final int backgroundColor = Color.WHITE;
 
         public JumpingEngine() {
             p.setFilterBitmap(false);
@@ -77,7 +78,7 @@ public class JumpingBurger extends WallpaperService {
             Canvas canvas = null;
             try {
                 canvas = holder.lockCanvas();
-                canvas.drawColor(Color.WHITE);
+                canvas.drawColor(backgroundColor);
                 for (ToDraw actual : objects) {
                     canvas.drawBitmap(actual.getTexture(), actual.getX(), actual.getY(), p);
                 }

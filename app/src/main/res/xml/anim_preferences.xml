@@ -20,12 +20,7 @@
         android:defaultValue="false"
         android:key="pref_bg_color_or_bg_image"
         android:title="@string/pref_bg_color_or_bg_image" />
-
-    <EditTextPreference
-        android:defaultValue="@string/abc"
-        android:key="pref_bg_image"
-        android:selectAllOnFocus="true"
-        android:singleLine="true"
-        android:title="@string/pref_choose_bg_image" />
-
+    <Preference
+        android:summary="@string/go_to_mainactivity_for_bg_image"
+        />
 </PreferenceScreen>

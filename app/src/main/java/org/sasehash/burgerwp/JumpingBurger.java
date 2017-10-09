@@ -83,7 +83,6 @@ public class JumpingBurger extends WallpaperService {
                     if (filename.equals("abc")) {
                         throw new IllegalStateException("Got Standard (invalid) filename");
                     }
-                    //InputStream is = new FileInputStream(filename);
                     Uri uri = Uri.parse(filename);
                     InputStream is = getContentResolver().openInputStream(uri);
                     if (is == null) {
@@ -93,7 +92,7 @@ public class JumpingBurger extends WallpaperService {
                     try {
                         is.close();
                     } catch (IOException e) {
-                        //wtf?
+                        //well don't care about it
                     }
                 } catch (FileNotFoundException e) {
                     e.printStackTrace();

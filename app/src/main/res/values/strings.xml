@@ -26,6 +26,8 @@
     <string name="pref_choose_bg_image">Choose a background image</string>
     <string name="pref_bg_color_or_bg_image">Use an Image instead of a color</string>
 
+    <string name="go_to_mainactivity_for_bg_image">Go back to use (if needed) a background Image</string>
+
     <string name="default_color">white</string>
     <string-array name="colors">
         <item>black</item>

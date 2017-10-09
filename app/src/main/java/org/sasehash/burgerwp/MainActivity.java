@@ -16,7 +16,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     //preview the wallpaper and the possibility to set it as current wallpaper
-    public void burger(View view) {
+    public void startPreview(View view) {
         Intent intent = new Intent(
                 WallpaperManager.ACTION_CHANGE_LIVE_WALLPAPER);
         intent.putExtra(WallpaperManager.EXTRA_LIVE_WALLPAPER_COMPONENT,

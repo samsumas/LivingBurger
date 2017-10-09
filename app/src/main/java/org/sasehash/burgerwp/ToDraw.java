@@ -12,6 +12,7 @@ public class ToDraw {
     private Movement mov;
     private long currentMovementTime= 0;
     private long maxMovementTime = 50;
+    private boolean selfDestroy = false; // will
 
     public ToDraw(Bitmap texture, int x, int y, Movement mov, long currentMovementTime, long maxMovementTime) {
         this.texture = texture;
@@ -20,6 +21,24 @@ public class ToDraw {
         this.mov = mov;
         this.currentMovementTime = currentMovementTime;
         this.maxMovementTime = maxMovementTime;
+    }
+    public ToDraw(Bitmap texture, int x, int y, Movement mov, long currentMovementTime, long maxMovementTime, boolean selfDestroy) {
+        this(texture,x,y,mov,currentMovementTime,maxMovementTime);
+        this.selfDestroy=selfDestroy;
+    }
+
+    public void setSelfDestroy(boolean selfdestroy) {
+        this.selfDestroy=selfdestroy;
+    }
+    public  boolean getSelfDestroy() {
+        return selfDestroy;
+    }
+
+    public boolean survives() {
+        return !(selfDestroy && mov==null);
+    }
+    public boolean dies() {
+        return (selfDestroy && mov == null);
     }
 
     public void move(long t) {

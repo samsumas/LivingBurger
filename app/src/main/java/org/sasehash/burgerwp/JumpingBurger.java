@@ -7,22 +7,17 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.net.Uri;
+import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.service.wallpaper.WallpaperService;
-import android.os.Handler;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.ObjectInputStream;
-import java.util.List;
-
 import java.util.ArrayList;
-
-import static org.sasehash.burgerwp.R.xml.anim_preferences;
+import java.util.List;
 
 /**
  * Created by sami on 08/10/17.
@@ -36,35 +31,32 @@ public class JumpingBurger extends WallpaperService {
     }
 
     private class JumpingEngine extends Engine {
-        /* Values needed internally */
-        private Handler handler = new Handler();
-        private final Runnable drawRunner = new Runnable() {
-            @Override
-            public void run() {
-                draw();
-            }
-        };
-        private boolean visibility = true;
         private final double NEARLY_ZERO = 0.1;
-        private long time;
-        private Paint p = new Paint();
-        private int width, height;
-        private List<ToDraw> objects = new ArrayList<>();
-
-
         /* Values that can be tweaked */
         private final boolean runAway;
         private final int burgerSpeed = 5;
         private final int heartSpeed = 5;
         private final int burgerRunningTime = 3000;
         private final int heartRunningTime = 1500;
-
         private final int burgerTextureID = R.drawable.burger;
         private final int heartTextureID = R.drawable.heart;
         private final int backgroundColor;
+        private final int burgerCount = 1;
+        /* Values needed internally */
+        private Handler handler = new Handler();
+        private boolean visibility = true;
+        private long time;
+        private Paint p = new Paint();
+        private int width, height;
+        private List<ToDraw> objects = new ArrayList<>();
         private Bitmap backgroundImage;
         private boolean useBackgroundImage;
-        private final int burgerCount = 1;
+        private final Runnable drawRunner = new Runnable() {
+            @Override
+            public void run() {
+                draw();
+            }
+        };
 
         public JumpingEngine() {
             SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(JumpingBurger.this);
@@ -75,7 +67,7 @@ public class JumpingBurger extends WallpaperService {
             backgroundColor = Color.parseColor(settings.getString("bg_color", "black"));
             if (useBackgroundImage) {
                 try {
-                    checkValue("pref_bg_image",settings);
+                    checkValue("pref_bg_image", settings);
                     String filename = settings.getString("pref_bg_image", null);
                     if (filename == null) {
                         throw new IllegalStateException("Failed to get ImageName with intent");
@@ -123,7 +115,7 @@ public class JumpingBurger extends WallpaperService {
 
         private void checkValue(String a, SharedPreferences settings) {
             if (!settings.contains(a)) {
-                throw new IllegalStateException("Cannot read "+a+" Settings from anim_preferences!");
+                throw new IllegalStateException("Cannot read " + a + " Settings from anim_preferences!");
             }
         }
 

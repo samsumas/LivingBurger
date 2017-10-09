@@ -1,24 +1,13 @@
 package org.sasehash.burgerwp;
 
-import android.app.Dialog;
 import android.app.WallpaperManager;
 import android.content.ComponentName;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.graphics.Color;
 import android.os.Bundle;
-import android.preference.Preference;
 import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
-
-import com.flask.colorpicker.ColorPickerView;
-import com.flask.colorpicker.OnColorSelectedListener;
-import com.flask.colorpicker.builder.ColorPickerClickListener;
-import com.flask.colorpicker.builder.ColorPickerDialogBuilder;
-
-import static android.R.id.edit;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -49,11 +38,11 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == intentID) {
-            if(resultCode==RESULT_OK) {
+            if (resultCode == RESULT_OK) {
                 //this intent contains the new wallpaper!
                 //put it in the settings
                 SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(this);
-                SharedPreferences.Editor editor= settings.edit();
+                SharedPreferences.Editor editor = settings.edit();
                 //enable picture as wallpaper
                 editor.putBoolean("pref_bg_color_or_bg_image", true);
                 //put filepath of picture at the right place

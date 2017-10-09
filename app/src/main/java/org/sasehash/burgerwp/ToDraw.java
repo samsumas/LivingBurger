@@ -10,7 +10,7 @@ public class ToDraw {
     private Bitmap texture;
     private int x, y;
     private Movement mov;
-    private long currentMovementTime= 0;
+    private long currentMovementTime = 0;
     private long maxMovementTime = 50;
     private boolean selfDestroy = false; // will
 
@@ -22,33 +22,36 @@ public class ToDraw {
         this.currentMovementTime = currentMovementTime;
         this.maxMovementTime = maxMovementTime;
     }
+
     public ToDraw(Bitmap texture, int x, int y, Movement mov, long currentMovementTime, long maxMovementTime, boolean selfDestroy) {
-        this(texture,x,y,mov,currentMovementTime,maxMovementTime);
-        this.selfDestroy=selfDestroy;
+        this(texture, x, y, mov, currentMovementTime, maxMovementTime);
+        this.selfDestroy = selfDestroy;
     }
 
-    public void setSelfDestroy(boolean selfdestroy) {
-        this.selfDestroy=selfdestroy;
-    }
-    public  boolean getSelfDestroy() {
+    public boolean getSelfDestroy() {
         return selfDestroy;
     }
 
-    public boolean survives() {
-        return !(selfDestroy && mov==null);
+    public void setSelfDestroy(boolean selfdestroy) {
+        this.selfDestroy = selfdestroy;
     }
+
+    public boolean survives() {
+        return !(selfDestroy && mov == null);
+    }
+
     public boolean dies() {
         return (selfDestroy && mov == null);
     }
 
     public void move(long t) {
-        long dt = t+currentMovementTime;
-        if (dt > maxMovementTime || mov==null) {
-            mov=null;
+        long dt = t + currentMovementTime;
+        if (dt > maxMovementTime || mov == null) {
+            mov = null;
             return;
         }
-        x+=mov.moveX(t);
-        y+=mov.moveY(t);
+        x += mov.moveX(t);
+        y += mov.moveY(t);
         currentMovementTime = dt;
     }
 

@@ -51,11 +51,7 @@ public class MainActivity extends AppCompatActivity {
                 if (!settings.contains("pref_bg_image")) {
                     throw new IllegalStateException("Could not set image to pref_bg_image");
                 }
-            } else {
-                throw new IllegalStateException("Could not chose image");
             }
-        } else {
-            throw new IllegalStateException("Got an intent that wasn't for me");
         }
     }
 

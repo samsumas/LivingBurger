@@ -1,10 +1,12 @@
 package org.sasehash.burgerwp;
 
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.preference.PreferenceManager;
 import android.service.wallpaper.WallpaperService;
 import android.os.Handler;
 import android.view.MotionEvent;
@@ -43,7 +45,7 @@ public class JumpingBurger extends WallpaperService {
 
 
         /* Values that can be tweaked */
-        private final boolean runAway = false;
+        private final boolean runAway;
         private final int burgerSpeed = 5;
         private final int heartSpeed = 5;
         private final int burgerRunningTime = 3000;
@@ -55,6 +57,8 @@ public class JumpingBurger extends WallpaperService {
         private final int burgerCount =1;
 
         public JumpingEngine() {
+            SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(JumpingBurger.this);
+            runAway = settings.getBoolean("pref_run_away", false);
             p.setFilterBitmap(false);
             p.setStyle(Paint.Style.FILL);
             time = System.currentTimeMillis();

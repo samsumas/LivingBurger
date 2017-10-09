@@ -23,4 +23,9 @@ public class MainActivity extends AppCompatActivity {
                 new ComponentName(this, JumpingBurger.class));
         startActivity(intent);
     }
+
+    //start settings activity
+    public void startSettings(View view) {
+        startActivity(new Intent(this, SettingsActivity.class));
+    }
 }

@@ -22,6 +22,28 @@
     <string name="pref_title_display_name">Display name</string>
     <string name="pref_default_display_name">John Smith</string>
 
+    <string name="pref_choose_bg_color">Choose a background color</string>
+    <string name="pref_choose_bg_image">Choose a background image</string>
+    <string name="pref_bg_color_or_bg_image">Use an Image instead of a color</string>
+
+    <string name="default_color">white</string>
+    <string-array name="colors">
+        <item>black</item>
+        <item>blue</item>
+        <item>cyan</item>
+        <item>dkgray</item>
+        <item>gray</item>
+        <item>green</item>
+        <item>ltgray</item>
+        <item>magenta</item>
+        <item>red</item>
+        <item>transparent</item>
+        <item>white</item>
+        <item>yellow</item>
+    </string-array>
+
+    <string name="abc">abc</string>
+
     <string name="pref_title_add_friends_to_messages">Add friends to messages</string>
     <string-array name="pref_example_list_titles">
         <item>Always</item>

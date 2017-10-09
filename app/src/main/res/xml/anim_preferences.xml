@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+
+    <SwitchPreference
+        android:defaultValue="false"
+        android:key="pref_run_away"
+        android:summaryOff="@string/pref_runAwayOff"
+        android:summaryOn="@string/pref_runAwayOn"
+        android:title="@string/burger_touch_behaviour" />
+
+    <ListPreference
+        android:defaultValue="1"
+        android:entries="@array/colors"
+        android:entryValues="@array/colors"
+        android:key="@string/pref_choose_bg_color"
+        android:title="@string/pref_choose_bg_color" />
+
+    <SwitchPreference
+        android:defaultValue="false"
+        android:key="pref_bg_color_or_bg_image"
+        android:title="@string/pref_bg_color_or_bg_image" />
+
+    <EditTextPreference
+        android:defaultValue="@string/abc"
+        android:key="pref_bg_image"
+        android:selectAllOnFocus="true"
+        android:singleLine="true"
+        android:title="@string/pref_choose_bg_image" />
+
+</PreferenceScreen>

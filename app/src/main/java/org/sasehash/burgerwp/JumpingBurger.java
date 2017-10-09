@@ -6,15 +6,23 @@ import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.net.Uri;
 import android.preference.PreferenceManager;
 import android.service.wallpaper.WallpaperService;
 import android.os.Handler;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
 import java.util.List;
 
 import java.util.ArrayList;
+
+import static org.sasehash.burgerwp.R.xml.anim_preferences;
 
 /**
  * Created by sami on 08/10/17.
@@ -53,24 +61,57 @@ public class JumpingBurger extends WallpaperService {
 
         private final int burgerTextureID = R.drawable.burger;
         private final int heartTextureID = R.drawable.heart;
-        private final int backgroundColor = Color.WHITE;
-        private final int burgerCount =1;
+        private final int backgroundColor;
+        private Bitmap backgroundImage;
+        private boolean useBackgroundImage;
+        private final int burgerCount = 1;
 
         public JumpingEngine() {
             SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(JumpingBurger.this);
+            checkValue("pref_run_away", settings);
+
             runAway = settings.getBoolean("pref_run_away", false);
+            useBackgroundImage = settings.getBoolean("pref_bg_color_or_bg_image", false);
+            backgroundColor = Color.parseColor(settings.getString("bg_color", "black"));
+            if (useBackgroundImage) {
+                try {
+                    checkValue("pref_bg_image",settings);
+                    String filename = settings.getString("pref_bg_image", null);
+                    if (filename == null) {
+                        throw new IllegalStateException("Failed to get ImageName with intent");
+                    }
+                    if (filename.equals("abc")) {
+                        throw new IllegalStateException("Got Standard (invalid) filename");
+                    }
+                    //InputStream is = new FileInputStream(filename);
+                    Uri uri = Uri.parse(filename);
+                    InputStream is = getContentResolver().openInputStream(uri);
+                    if (is == null) {
+                        throw new IllegalStateException("Could not open Background!");
+                    }
+                    backgroundImage = BitmapFactory.decodeStream(is);
+                    try {
+                        is.close();
+                    } catch (IOException e) {
+                        //wtf?
+                    }
+                } catch (FileNotFoundException e) {
+                    e.printStackTrace();
+                    useBackgroundImage = false; //continue with color instead of background
+                }
+            }
             p.setFilterBitmap(false);
             p.setStyle(Paint.Style.FILL);
             time = System.currentTimeMillis();
             Bitmap burgerTexture = BitmapFactory.decodeResource(getResources(), burgerTextureID);
             //using more then one burger isn't a good idea, they tended (in my testcase with 10 burgers) to overlap very quickly and
             //soon it looked like there were only 2 or three
-            for (int i=0; i<burgerCount; i++) {
-                final int curr =i;
+            for (int i = 0; i < burgerCount; i++) {
+                final int curr = i;
                 objects.add(new ToDraw(burgerTexture, 0, 0, new Movement() {
                     @Override
                     public int moveX(long time) {
-                        return burgerSpeed-curr;
+                        return burgerSpeed - curr;
                     }
 
                     @Override
@@ -81,46 +122,57 @@ public class JumpingBurger extends WallpaperService {
             }
         }
 
+        private void checkValue(String a, SharedPreferences settings) {
+            if (!settings.contains(a)) {
+                throw new IllegalStateException("Cannot read "+a+" Settings from anim_preferences!");
+            }
+        }
+
         private void spawnHearts(int i) {
             //TODO : recheck if "decoding the resource each time it is needed" is a good idea
             Bitmap heartTexture = BitmapFactory.decodeResource(getResources(), heartTextureID);
-            for (int j=0; j<i; j++) {
+            for (int j = 0; j < i; j++) {
                 //get random location near burger
-                final int sizeOfBurger=50;
-                int spawnAtX = objects.get(0).getX() + (int) (sizeOfBurger * Math.random()) + sizeOfBurger/2;
-                int spawnAtY = objects.get(0).getY() + (int) (sizeOfBurger * Math.random()) + sizeOfBurger/2;
+                final int sizeOfBurger = 50;
+                int spawnAtX = objects.get(0).getX() + (int) (sizeOfBurger * Math.random()) + sizeOfBurger / 2;
+                int spawnAtY = objects.get(0).getY() + (int) (sizeOfBurger * Math.random()) + sizeOfBurger / 2;
                 //we don't want all the hearts to go in the same directions
-                final double a = Math.random()*2 -1;
-                final double b = Math.random()*2 -1;
+                final double a = Math.random() * 2 - 1;
+                final double b = Math.random() * 2 - 1;
                 objects.add(new ToDraw(heartTexture, spawnAtX, spawnAtY, new Movement() {
                     @Override
                     public int moveX(long time) {
-                        return (int) (a*heartSpeed * Math.sin(time));
+                        return (int) (a * heartSpeed * Math.sin(time));
                     }
 
                     @Override
                     public int moveY(long time) {
-                        return (int) (b*heartSpeed * Math.cos(time));
+                        return (int) (b * heartSpeed * Math.cos(time));
                     }
-                }, 0, heartRunningTime,true));
+                }, 0, heartRunningTime, true));
             }
         }
 
         private void draw() {
             long t = System.currentTimeMillis();
-                for (ToDraw td : objects) {
-                    td.move(t - time);
-                }
+            for (ToDraw td : objects) {
+                td.move(t - time);
+            }
             time = t;
             SurfaceHolder holder = getSurfaceHolder();
             Canvas canvas = null;
             try {
                 canvas = holder.lockCanvas();
-                canvas.drawColor(backgroundColor);
+                if (!useBackgroundImage) {
+                    canvas.drawColor(backgroundColor);
+                } else {
+                    //TODO : recheck this, may not draw bitmap everywhere
+                    canvas.drawBitmap(backgroundImage, 0, 0, p);
+                }
 
-                    for (ToDraw actual : objects) {
-                        canvas.drawBitmap(actual.getTexture(), actual.getX(), actual.getY(), p);
-                    }
+                for (ToDraw actual : objects) {
+                    canvas.drawBitmap(actual.getTexture(), actual.getX(), actual.getY(), p);
+                }
             } finally {
                 if (canvas != null) {
                     holder.unlockCanvasAndPost(canvas);
@@ -150,17 +202,17 @@ public class JumpingBurger extends WallpaperService {
                 runAwayFromFinger(td, event);
             }
             /**
-            //50 % chance to spawn hearts
-            int toSpawn = (int) (Math.random()*2);
-            if (toSpawn > 0) {
-                //if there are hearts spawning, then 50 % chance for another heart (total 25%)
-                toSpawn += (int) (Math.random() * 2);
-                if (toSpawn > 1) {
-                    //25% chance for 3 hearts (total not much)
-                    toSpawn += (int) (Math.random() * 1.333);
-                }
-            }
-            spawnHearts(toSpawn);
+             //50 % chance to spawn hearts
+             int toSpawn = (int) (Math.random()*2);
+             if (toSpawn > 0) {
+             //if there are hearts spawning, then 50 % chance for another heart (total 25%)
+             toSpawn += (int) (Math.random() * 2);
+             if (toSpawn > 1) {
+             //25% chance for 3 hearts (total not much)
+             toSpawn += (int) (Math.random() * 1.333);
+             }
+             }
+             spawnHearts(toSpawn);
              **/
         }
 

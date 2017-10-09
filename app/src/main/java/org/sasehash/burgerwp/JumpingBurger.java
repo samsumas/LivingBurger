@@ -14,7 +14,6 @@ import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -40,6 +39,7 @@ public class JumpingBurger extends WallpaperService {
         private final int heartRunningTime = 1500;
         private final int burgerTextureID = R.drawable.burger;
         private final int heartTextureID = R.drawable.heart;
+        private final int pizzaTextureID = R.drawable.pizza;
         private final int backgroundColor;
         private final int burgerCount = 1;
         /* Values needed internally */
@@ -83,7 +83,7 @@ public class JumpingBurger extends WallpaperService {
                     backgroundImage = BitmapFactory.decodeStream(is);
                     try {
                         is.close();
-                    } catch (IOException e) {
+                    } catch (Exception e) {
                         //well don't care about it
                     }
                 } catch (FileNotFoundException e) {
@@ -94,6 +94,7 @@ public class JumpingBurger extends WallpaperService {
             p.setFilterBitmap(false);
             p.setStyle(Paint.Style.FILL);
             time = System.currentTimeMillis();
+            spawnPizza();
             Bitmap burgerTexture = BitmapFactory.decodeResource(getResources(), burgerTextureID);
             //using more then one burger isn't a good idea, they tended (in my testcase with 10 burgers) to overlap very quickly and
             //soon it looked like there were only 2 or three
@@ -117,6 +118,22 @@ public class JumpingBurger extends WallpaperService {
             if (!settings.contains(a)) {
                 throw new IllegalStateException("Cannot read " + a + " Settings from anim_preferences!");
             }
+        }
+
+        private void spawnPizza() {
+            Bitmap pizzaTexture = BitmapFactory.decodeResource(getResources(), pizzaTextureID);
+            objects.add(new ToDraw(pizzaTexture, width / 2, height / 2, new Movement() {
+                //TODO: add better movementvalues
+                @Override
+                public int moveX(long time) {
+                    return 1;
+                }
+
+                @Override
+                public int moveY(long time) {
+                    return 1;
+                }
+            }, 0, burgerRunningTime));
         }
 
         private void spawnHearts(int i) {
@@ -210,8 +227,8 @@ public class JumpingBurger extends WallpaperService {
         private void runAwayFromFinger(ToDraw td, MotionEvent event) {
             td.setCurrentMovementTime(0);
             td.setMaxMovementTime(burgerRunningTime);
-            int dx = (int) Math.round(td.getX() - event.getX());
-            int dy = (int) Math.round(td.getY() - event.getY());
+            int dx = Math.round(td.getX() - event.getX());
+            int dy = Math.round(td.getY() - event.getY());
 
             //this android runs from humans away, depending on the runAway value
             double size = Math.sqrt(dx * dx + dy * dy);
@@ -236,6 +253,24 @@ public class JumpingBurger extends WallpaperService {
                     return b;
                 }
             });
+        }
+
+        /**
+         * Let the objects rain down (to be put in the draw method)
+         */
+        private void raining(ToDraw td) {
+            raining(td, 0.0, -1.0);
+        }
+
+        /*
+         * Let the objects rain in the giving vector direction (to be put in the draw method)
+         */
+        private void raining(ToDraw td, double dirX, double dirY) {
+            //check if not  in screen
+            if (!(td.getX() > 0 && td.getX() < width && td.getY() > 0 && td.getY() < height)) {
+                td.setX(0);
+                //TODO : continue
+            }
         }
 
         @Override

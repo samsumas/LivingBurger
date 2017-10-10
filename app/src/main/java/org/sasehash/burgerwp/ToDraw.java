@@ -9,23 +9,65 @@ import android.graphics.Bitmap;
 public class ToDraw {
     private Bitmap texture;
     private int x, y;
-    private Movement mov;
-    private long currentMovementTime = 0;
-    private long maxMovementTime = 50;
-    private boolean selfDestroy = false; // will
+    private long currentMovementTime;
+    private long maxMovementTime;
+    private boolean selfDestroy = false;
+    private int bouncing;
+    private Lambda xVec;
+    private Lambda yVec;
+    private int xMultiplier=1;
+    private int yMultiplier=1;
 
-    public ToDraw(Bitmap texture, int x, int y, Movement mov, long currentMovementTime, long maxMovementTime) {
+    public ToDraw(Bitmap texture, int x, int y, long currentMovementTime, long maxMovementTime, boolean selfDestroy, int bouncing) {
         this.texture = texture;
         this.x = x;
         this.y = y;
-        this.mov = mov;
         this.currentMovementTime = currentMovementTime;
         this.maxMovementTime = maxMovementTime;
+        this.selfDestroy = selfDestroy;
+        this.bouncing = bouncing;
     }
 
-    public ToDraw(Bitmap texture, int x, int y, Movement mov, long currentMovementTime, long maxMovementTime, boolean selfDestroy) {
-        this(texture, x, y, mov, currentMovementTime, maxMovementTime);
-        this.selfDestroy = selfDestroy;
+    public int getWidth() {
+        return texture.getWidth();
+    }
+    public int getHeight() {
+        return texture.getHeight();
+    }
+
+    public void bounceX() {
+        xMultiplier *=-1;
+    }
+    public boolean isVecNull() {
+        return xVec == null || yVec == null;
+    }
+    public void resetMultipliers() {
+        xMultiplier=1;
+        yMultiplier=1;
+    }
+    public void bounceY() {
+        yMultiplier *=-1;
+    }
+    public int getxVec(long t) {
+        return xMultiplier*xVec.l(t);
+    }
+    public void setxVec(Lambda xVec) {
+        this.xVec = xVec;
+    }
+    public int getyVec(long t) {
+        return yMultiplier*yVec.l(t);
+    }
+
+    public void setyVec(Lambda yVec) {
+        this.yVec = yVec;
+    }
+
+    public int getBouncing() {
+        return bouncing;
+    }
+
+    public void setBouncing(int bouncing) {
+        this.bouncing = bouncing;
     }
 
     public boolean getSelfDestroy() {
@@ -36,23 +78,16 @@ public class ToDraw {
         this.selfDestroy = selfdestroy;
     }
 
+    public boolean timeLeft() {
+        return currentMovementTime < maxMovementTime;
+    }
+
     public boolean survives() {
-        return !(selfDestroy && mov == null);
+        return !selfDestroy || !timeLeft();
     }
 
     public boolean dies() {
-        return (selfDestroy && mov == null);
-    }
-
-    public void move(long t) {
-        long dt = t + currentMovementTime;
-        if (dt > maxMovementTime || mov == null) {
-            mov = null;
-            return;
-        }
-        x += mov.moveX(t);
-        y += mov.moveY(t);
-        currentMovementTime = dt;
+        return (selfDestroy && !timeLeft());
     }
 
     public Bitmap getTexture() {
@@ -71,20 +106,20 @@ public class ToDraw {
         this.x = x;
     }
 
+    public void addToX(int x) {
+        this.x += x;
+    }
+
+    public void addToY(int y) {
+        this.y += y;
+    }
+
     public int getY() {
         return y;
     }
 
     public void setY(int y) {
         this.y = y;
-    }
-
-    public Movement getMov() {
-        return mov;
-    }
-
-    public void setMov(Movement mov) {
-        this.mov = mov;
     }
 
     public long getCurrentMovementTime() {

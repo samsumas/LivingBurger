@@ -13,7 +13,7 @@
         android:defaultValue="1"
         android:entries="@array/colors"
         android:entryValues="@array/colors"
-        android:key="@string/pref_choose_bg_color"
+        android:key="bg_color"
         android:title="@string/pref_choose_bg_color" />
 
     <SwitchPreference

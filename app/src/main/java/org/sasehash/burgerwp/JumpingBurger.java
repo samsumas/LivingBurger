@@ -35,13 +35,16 @@ public class JumpingBurger extends WallpaperService {
         private final boolean runAway;
         private final int burgerSpeed = 5;
         private final int heartSpeed = 5;
-        private final int burgerRunningTime = 3000;
-        private final int heartRunningTime = 1500;
+        private final int burgerRunningTime = Integer.MAX_VALUE;
+        private final int pizzaRunningTime = Integer.MAX_VALUE;
+        private final int heartRunningTime = Integer.MAX_VALUE;
         private final int burgerTextureID = R.drawable.burger;
         private final int heartTextureID = R.drawable.heart;
         private final int pizzaTextureID = R.drawable.pizza;
         private final int backgroundColor;
-        private final int burgerCount = 1;
+        private final int burgerCount = 20;
+        private final int pizzaCount = 20;
+        private final int sleepBetweenRedraws = 35;
         /* Values needed internally */
         private Handler handler = new Handler();
         private boolean visibility = true;
@@ -51,6 +54,7 @@ public class JumpingBurger extends WallpaperService {
         private List<ToDraw> objects = new ArrayList<>();
         private Bitmap backgroundImage;
         private boolean useBackgroundImage;
+
         private final Runnable drawRunner = new Runnable() {
             @Override
             public void run() {
@@ -101,17 +105,40 @@ public class JumpingBurger extends WallpaperService {
             //soon it looked like there were only 2 or three
             for (int i = 0; i < burgerCount; i++) {
                 final int curr = i;
-                objects.add(new ToDraw(burgerTexture, 0, 0, new Movement() {
+                ToDraw temp = new ToDraw(burgerTexture, 0, 0, 0, burgerRunningTime, false, Integer.MAX_VALUE);
+                final int abc =i;
+                //you don't need x perfectly superposed burgers
+                temp.setxVec(new Lambda() {
                     @Override
-                    public int moveX(long time) {
-                        return burgerSpeed - curr;
+                    public int l(long x) {
+                        return burgerCount-abc;
                     }
-
+                });
+                temp.setyVec(new Lambda() {
                     @Override
-                    public int moveY(long time) {
-                        return curr;
+                    public int l(long x) {
+                        return abc;
                     }
-                }, 0, burgerRunningTime));
+                });
+                objects.add(temp);
+            }
+            final Bitmap pizzaTexture = BitmapFactory.decodeResource(getResources(), pizzaTextureID);
+            for(int i=0; i<pizzaCount; i++) {
+                ToDraw td = new ToDraw(pizzaTexture, 0, 0, 0, burgerRunningTime, true, 0);
+                final int abc= i;
+                td.setxVec(new Lambda() {
+                    @Override
+                    public int l(long x) {
+                        return abc;
+                    }
+                });
+                td.setyVec(new Lambda() {
+                    @Override
+                    public int l(long x) {
+                        return pizzaCount-abc;
+                    }
+                });
+                objects.add(td);
             }
         }
 
@@ -120,65 +147,90 @@ public class JumpingBurger extends WallpaperService {
                 throw new IllegalStateException("Cannot read " + a + " Settings from anim_preferences!");
             }
         }
-
-        private void spawnPizza() {
-            Bitmap pizzaTexture = BitmapFactory.decodeResource(getResources(), pizzaTextureID);
-            objects.add(new ToDraw(pizzaTexture, width / 2, height / 2, new Movement() {
-                //TODO: add better movementvalues
-                @Override
-                public int moveX(long time) {
-                    return 1;
+        public void moveObject(ToDraw td, long t) {
+            long dt = t + td.getCurrentMovementTime();
+            if (!td.timeLeft() || td.isVecNull()) {
+                return;
+            }
+            td.addToX(td.getxVec(t));
+            td.addToY(td.getyVec(t));
+            td.setCurrentMovementTime(dt);
+            if (!isOnScreen(td)) {
+                if (td.getBouncing() > 0) {
+                    bounce(td);
+                    td.setBouncing(td.getBouncing() - 1);
+                } else {
+                    resetOnScreen(td);
                 }
+            }
 
-                @Override
-                public int moveY(long time) {
-                    return 1;
-                }
-            }, 0, burgerRunningTime));
         }
 
-        private void spawnHearts(int i) {
-            //TODO : recheck if "decoding the resource each time it is needed" is a good idea
-            Bitmap heartTexture = BitmapFactory.decodeResource(getResources(), heartTextureID);
-            for (int j = 0; j < i; j++) {
-                //get random location near burger
-                final int sizeOfBurger = 50;
-                int spawnAtX = objects.get(0).getX() + (int) (sizeOfBurger * Math.random()) + sizeOfBurger / 2;
-                int spawnAtY = objects.get(0).getY() + (int) (sizeOfBurger * Math.random()) + sizeOfBurger / 2;
-                //we don't want all the hearts to go in the same directions
-                final double a = Math.random() * 2 - 1;
-                final double b = Math.random() * 2 - 1;
-                objects.add(new ToDraw(heartTexture, spawnAtX, spawnAtY, new Movement() {
-                    @Override
-                    public int moveX(long time) {
-                        return (int) (a * heartSpeed * Math.sin(time));
-                    }
-
-                    @Override
-                    public int moveY(long time) {
-                        return (int) (b * heartSpeed * Math.cos(time));
-                    }
-                }, 0, heartRunningTime, true));
+        public void moveObjects(long t) {
+            for (ToDraw td : objects) {
+                moveObject(td,t);
             }
+        }
+
+        private int modulo(int a, int m) {
+            while (a < 0) {
+                a += m;
+            }
+            while (a > m) {
+                a -= m;
+            }
+            return a;
+        }
+
+        //NO ESCAPE FROM THIS SCREEN!
+        private void resetOnScreen(ToDraw td) {
+            td.setX(modulo(td.getX(), width));
+            td.setY(modulo(td.getY(), height));
+        }
+
+        private void bounce(ToDraw td) {
+            if (!isOnScreenX(td)) {
+                td.bounceX();
+            } else {
+                td.bounceY();
+            }
+        }
+
+        //bounce ^^
+        private boolean isOnScreen(ToDraw td) {
+            return isOnScreenX(td) && isOnScreenY(td);
+        }
+
+        private boolean isOnScreenY(ToDraw td) {
+            return td.getY() == modulo(td.getY(), height - td.getHeight());
+        }
+
+        private boolean isOnScreenX(ToDraw td) {
+            return td.getX() == modulo(td.getX(), width - td.getWidth());
+        }
+        private void spawnPizza() {
+            spawnPizza(1);
+        }
+
+        private void spawnPizza(int i) {
+            Bitmap pizzaTexture = BitmapFactory.decodeResource(getResources(), pizzaTextureID);
+            objects.add(new ToDraw(pizzaTexture, 0, 0, 0, burgerRunningTime, true, 0));
         }
 
         private void draw() {
             long t = System.currentTimeMillis();
-            for (ToDraw td : objects) {
-                td.move(t - time);
-            }
-            time = t;
+            moveObjects(t - time);
             SurfaceHolder holder = getSurfaceHolder();
             Canvas canvas = null;
             try {
                 canvas = holder.lockCanvas();
                 canvas.drawColor(backgroundColor);
                 if (useBackgroundImage) {
-                    //TODO : draws background and then bitmap over it
                     canvas.drawBitmap(backgroundImage, 0, 0, p);
                 }
 
                 for (ToDraw actual : objects) {
+                    moveObject(actual, t-time);
                     canvas.drawBitmap(actual.getTexture(), actual.getX(), actual.getY(), p);
                 }
             } finally {
@@ -186,9 +238,10 @@ public class JumpingBurger extends WallpaperService {
                     holder.unlockCanvasAndPost(canvas);
                 }
             }
+            time = t;
             handler.removeCallbacks(drawRunner);
             if (visibility) {
-                handler.postDelayed(drawRunner, 40);
+                handler.postDelayed(drawRunner, sleepBetweenRedraws);
             }
         }
 
@@ -242,14 +295,17 @@ public class JumpingBurger extends WallpaperService {
             }
             final int a = (int) Math.round(vecX);
             final int b = (int) Math.round(vecY);
-            td.setMov(new Movement() {
+            //TODO : make the object move in (a,b) !
+            td.resetMultipliers();
+            td.setxVec(new Lambda() {
                 @Override
-                public int moveX(long time) {
+                public int l(long x) {
                     return a;
                 }
-
+            });
+            td.setyVec(new Lambda() {
                 @Override
-                public int moveY(long time) {
+                public int l(long x) {
                     return b;
                 }
             });

@@ -162,6 +162,20 @@ public class JumpingBurger extends WallpaperService {
                 if (td.getBouncing() > 0) {
                     bounce(td);
                     td.setBouncing(td.getBouncing() - 1);
+                    //if off-screen (happens when you touch too much for a while), reset onScreen
+                    if (td.getX() < 0) {
+                        td.setX(0);
+                    }
+                    if (td.getY() < 0) {
+                        td.setY(0);
+                    }
+                    if (td.getX() > width - td.getWidth()) {
+                        td.setX(width - td.getWidth());
+                    }
+                    if (td.getY() > height - td.getHeight()) {
+                        td.setY(height - td.getHeight());
+                    }
+
                 } else {
                     //TODO function "going from left to right" is broken. will fix this another day
                     //objects.remove(td);
@@ -190,33 +204,46 @@ public class JumpingBurger extends WallpaperService {
 
         //NO ESCAPE FROM THIS SCREEN!
         private void resetOnScreen(ToDraw td) {
-            //still in pic range ?
-            // if ((td.getX() > -td.getWidth() || td.getX() > width - td.getWidth()) && (td.getY() > -td.getHeight() && td.getY() < height - td.getHeight())) {
-            //checks if in the "needs double" margin
-            //if (modulo(td.getX(),width)>width-td.getWidth() || modulo(td.getY(),height)>height-td.getHeight()) {
-            //    doubles.add(new ToDraw(td.getTexture(), modulo(td.getX(), width), modulo(td.getY(), height), td.getCurrentMovementTime(), td.getMaxMovementTime(), td.getSelfDestroy(), td.getBouncing()));
-            //} else {
+            //FIXME pizza sometimes flickers... possible reason : double disappears/background/pizza is resetted
             //first case : negative coordinates
             List<ToDraw> doublesToAdd = new ArrayList<>();
-            if (td.getX() < 0 && td.getX() > -td.getWidth()) {
-                ToDraw t = new ToDraw(td);
-                t.setX(td.getX() + width);
-                doublesToAdd.add(t);
+            if (td.getX() < 0) {
+                if (td.getX() > -td.getWidth()) {
+                    ToDraw t = new ToDraw(td);
+                    t.setX(td.getX() + width);
+                    doublesToAdd.add(t);
+                } else {
+                    //reset correct coordinate
+                    td.setX(modulo(td.getX(), width));
+                }
             }
-            if (td.getY() < 0 && td.getHeight() > -td.getHeight()) {
-                ToDraw t = new ToDraw(td);
-                t.setY(td.getY() + height);
-                doublesToAdd.add(t);
+            if (td.getY() < 0) {
+                if (td.getHeight() > -td.getHeight()) {
+                    ToDraw t = new ToDraw(td);
+                    t.setY(td.getY() + height);
+                    doublesToAdd.add(t);
+                } else {
+                    td.setY(modulo(td.getY(), height));
+                }
             }
-            if (td.getX() + td.getWidth() > width && td.getX() < width) {
-                ToDraw t = new ToDraw(td);
-                t.setX(td.getX() - width);
-                doublesToAdd.add(t);
+            if (td.getX() + td.getWidth() > width) {
+                // the <= fixed the flashing...yey!
+                if (td.getX() <= width) {
+                    ToDraw t = new ToDraw(td);
+                    t.setX(td.getX() - width);
+                    doublesToAdd.add(t);
+                } else {
+                    td.setX(modulo(td.getX(), width));
+                }
             }
-            if (td.getY() + td.getHeight() > height && td.getY() < height) {
-                ToDraw t = new ToDraw(td);
-                t.setY(td.getY() - height);
-                doublesToAdd.add(t);
+            if (td.getY() + td.getHeight() > height) {
+                if (td.getY() <= height) {
+                    ToDraw t = new ToDraw(td);
+                    t.setY(td.getY() - height);
+                    doublesToAdd.add(t);
+                } else {
+                    td.setY(modulo(td.getY(), height));
+                }
             }
             if (doublesToAdd.isEmpty()) {
                 td.setX(modulo(td.getX(), width));
@@ -234,7 +261,6 @@ public class JumpingBurger extends WallpaperService {
             }
         }
 
-        //bounce ^^
         private boolean isOnScreen(ToDraw td) {
             return isOnScreenX(td) && isOnScreenY(td);
         }

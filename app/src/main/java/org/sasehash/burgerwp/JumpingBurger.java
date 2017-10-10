@@ -201,55 +201,51 @@ public class JumpingBurger extends WallpaperService {
             return a;
         }
 
+        private boolean inCorner(ToDraw td) {
+            return (td.getX() < 0 || td.getX() + td.getWidth() > width)
+                    && (td.getY() < 0 || td.getY() + td.getHeight() > height);
+        }
 
-        //NO ESCAPE FROM THIS SCREEN!
-        private void resetOnScreen(ToDraw td) {
-            //FIXME pizza sometimes flickers... possible reason : double disappears/background/pizza is resetted
-            //first case : negative coordinates
-            List<ToDraw> doublesToAdd = new ArrayList<>();
+        private boolean outOfScreen(ToDraw td) {
+            return ((td.getX() < 0 && td.getX() + td.getWidth() > 0) || (td.getX() + td.getWidth() > width && td.getX() <= width))
+                    || ((td.getY() < 0 && td.getHeight() + td.getHeight() > 0) || (td.getY() + td.getHeight() > height && td.getY() <= height));
+        }
+
+        private boolean completelyOutOfScreen(ToDraw td) {
+            return (td.getX() + td.getWidth() < 0 || td.getX() > width)
+                    || (td.getY() + td.getHeight() < 0 || td.getY() > height);
+        }
+
+        private int rectifyX(ToDraw td) {
             if (td.getX() < 0) {
-                if (td.getX() > -td.getWidth()) {
-                    ToDraw t = new ToDraw(td);
-                    t.setX(td.getX() + width);
-                    doublesToAdd.add(t);
-                } else {
-                    //reset correct coordinate
-                    td.setX(modulo(td.getX(), width));
-                }
-            }
-            if (td.getY() < 0) {
-                if (td.getHeight() > -td.getHeight()) {
-                    ToDraw t = new ToDraw(td);
-                    t.setY(td.getY() + height);
-                    doublesToAdd.add(t);
-                } else {
-                    td.setY(modulo(td.getY(), height));
-                }
+                return td.getX() + width;
             }
             if (td.getX() + td.getWidth() > width) {
-                // the <= fixed the flashing...yey!
-                if (td.getX() <= width) {
-                    ToDraw t = new ToDraw(td);
-                    t.setX(td.getX() - width);
-                    doublesToAdd.add(t);
-                } else {
-                    td.setX(modulo(td.getX(), width));
-                }
+                return td.getX() - width;
+            }
+            return td.getX();
+        }
+
+        private int rectifyY(ToDraw td) {
+            if (td.getY() < 0) {
+                return td.getY() + height;
             }
             if (td.getY() + td.getHeight() > height) {
-                if (td.getY() <= height) {
-                    ToDraw t = new ToDraw(td);
-                    t.setY(td.getY() - height);
-                    doublesToAdd.add(t);
-                } else {
-                    td.setY(modulo(td.getY(), height));
-                }
+                return td.getY() - height;
             }
-            if (doublesToAdd.isEmpty()) {
+            return td.getY();
+        }
+
+        private void resetOnScreen(ToDraw td) {
+            if (completelyOutOfScreen(td)) {
                 td.setX(modulo(td.getX(), width));
                 td.setY(modulo(td.getY(), height));
-            } else {
-                doubles.addAll(doublesToAdd);
+            }
+            if (outOfScreen(td)) {
+                ToDraw t = new ToDraw(td);
+                t.setX(rectifyX(t));
+                t.setY(rectifyY(t));
+                doubles.add(t);
             }
         }
 
@@ -372,7 +368,6 @@ public class JumpingBurger extends WallpaperService {
             }
             final int a = (int) Math.round(vecX);
             final int b = (int) Math.round(vecY);
-            //TODO : make the object move in (a,b) !
             td.resetMultipliers();
             td.setxVec(new Lambda() {
                 @Override

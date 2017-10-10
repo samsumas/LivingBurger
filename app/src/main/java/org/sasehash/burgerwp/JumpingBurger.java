@@ -6,6 +6,7 @@ import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Rect;
 import android.net.Uri;
 import android.os.Handler;
 import android.preference.PreferenceManager;
@@ -52,6 +53,7 @@ public class JumpingBurger extends WallpaperService {
         private Paint p = new Paint();
         private int width, height;
         private List<ToDraw> objects = new ArrayList<>();
+        private List<ToDraw> doubles = new ArrayList<>();
         private Bitmap backgroundImage;
         private boolean useBackgroundImage;
 
@@ -106,12 +108,12 @@ public class JumpingBurger extends WallpaperService {
             for (int i = 0; i < burgerCount; i++) {
                 final int curr = i;
                 ToDraw temp = new ToDraw(burgerTexture, 0, 0, 0, burgerRunningTime, false, Integer.MAX_VALUE);
-                final int abc =i;
+                final int abc = i;
                 //you don't need x perfectly superposed burgers
                 temp.setxVec(new Lambda() {
                     @Override
                     public int l(long x) {
-                        return burgerCount-abc;
+                        return burgerCount - abc;
                     }
                 });
                 temp.setyVec(new Lambda() {
@@ -123,9 +125,9 @@ public class JumpingBurger extends WallpaperService {
                 objects.add(temp);
             }
             final Bitmap pizzaTexture = BitmapFactory.decodeResource(getResources(), pizzaTextureID);
-            for(int i=0; i<pizzaCount; i++) {
+            for (int i = 0; i < pizzaCount; i++) {
                 ToDraw td = new ToDraw(pizzaTexture, 0, 0, 0, burgerRunningTime, true, 0);
-                final int abc= i;
+                final int abc = i;
                 td.setxVec(new Lambda() {
                     @Override
                     public int l(long x) {
@@ -135,7 +137,7 @@ public class JumpingBurger extends WallpaperService {
                 td.setyVec(new Lambda() {
                     @Override
                     public int l(long x) {
-                        return pizzaCount-abc;
+                        return pizzaCount - abc;
                     }
                 });
                 objects.add(td);
@@ -147,6 +149,7 @@ public class JumpingBurger extends WallpaperService {
                 throw new IllegalStateException("Cannot read " + a + " Settings from anim_preferences!");
             }
         }
+
         public void moveObject(ToDraw td, long t) {
             long dt = t + td.getCurrentMovementTime();
             if (!td.timeLeft() || td.isVecNull()) {
@@ -160,6 +163,8 @@ public class JumpingBurger extends WallpaperService {
                     bounce(td);
                     td.setBouncing(td.getBouncing() - 1);
                 } else {
+                    //TODO function "going from left to right" is broken. will fix this another day
+                    //objects.remove(td);
                     resetOnScreen(td);
                 }
             }
@@ -168,7 +173,7 @@ public class JumpingBurger extends WallpaperService {
 
         public void moveObjects(long t) {
             for (ToDraw td : objects) {
-                moveObject(td,t);
+                moveObject(td, t);
             }
         }
 
@@ -182,10 +187,43 @@ public class JumpingBurger extends WallpaperService {
             return a;
         }
 
+
         //NO ESCAPE FROM THIS SCREEN!
         private void resetOnScreen(ToDraw td) {
-            td.setX(modulo(td.getX(), width));
-            td.setY(modulo(td.getY(), height));
+            //still in pic range ?
+            // if ((td.getX() > -td.getWidth() || td.getX() > width - td.getWidth()) && (td.getY() > -td.getHeight() && td.getY() < height - td.getHeight())) {
+            //checks if in the "needs double" margin
+            //if (modulo(td.getX(),width)>width-td.getWidth() || modulo(td.getY(),height)>height-td.getHeight()) {
+            //    doubles.add(new ToDraw(td.getTexture(), modulo(td.getX(), width), modulo(td.getY(), height), td.getCurrentMovementTime(), td.getMaxMovementTime(), td.getSelfDestroy(), td.getBouncing()));
+            //} else {
+            //first case : negative coordinates
+            List<ToDraw> doublesToAdd = new ArrayList<>();
+            if (td.getX() < 0 && td.getX() > -td.getWidth()) {
+                ToDraw t = new ToDraw(td);
+                t.setX(td.getX() + width);
+                doublesToAdd.add(t);
+            }
+            if (td.getY() < 0 && td.getHeight() > -td.getHeight()) {
+                ToDraw t = new ToDraw(td);
+                t.setY(td.getY() + height);
+                doublesToAdd.add(t);
+            }
+            if (td.getX() + td.getWidth() > width && td.getX() < width) {
+                ToDraw t = new ToDraw(td);
+                t.setX(td.getX() - width);
+                doublesToAdd.add(t);
+            }
+            if (td.getY() + td.getHeight() > height && td.getY() < height) {
+                ToDraw t = new ToDraw(td);
+                t.setY(td.getY() - height);
+                doublesToAdd.add(t);
+            }
+            if (doublesToAdd.isEmpty()) {
+                td.setX(modulo(td.getX(), width));
+                td.setY(modulo(td.getY(), height));
+            } else {
+                doubles.addAll(doublesToAdd);
+            }
         }
 
         private void bounce(ToDraw td) {
@@ -208,6 +246,7 @@ public class JumpingBurger extends WallpaperService {
         private boolean isOnScreenX(ToDraw td) {
             return td.getX() == modulo(td.getX(), width - td.getWidth());
         }
+
         private void spawnPizza() {
             spawnPizza(1);
         }
@@ -219,7 +258,6 @@ public class JumpingBurger extends WallpaperService {
 
         private void draw() {
             long t = System.currentTimeMillis();
-            moveObjects(t - time);
             SurfaceHolder holder = getSurfaceHolder();
             Canvas canvas = null;
             try {
@@ -229,9 +267,13 @@ public class JumpingBurger extends WallpaperService {
                     canvas.drawBitmap(backgroundImage, 0, 0, p);
                 }
 
+                doubles.clear();
                 for (ToDraw actual : objects) {
-                    moveObject(actual, t-time);
-                    canvas.drawBitmap(actual.getTexture(), actual.getX(), actual.getY(), p);
+                    moveObject(actual, t - time);
+                    drawOnCanvas(actual, canvas);
+                }
+                for (ToDraw actual : doubles) {
+                    drawOnCanvas(actual, canvas);
                 }
             } finally {
                 if (canvas != null) {
@@ -243,6 +285,15 @@ public class JumpingBurger extends WallpaperService {
             if (visibility) {
                 handler.postDelayed(drawRunner, sleepBetweenRedraws);
             }
+        }
+
+        public void drawOnCanvas(ToDraw actual, Canvas canvas) {
+            //this gets the source rectangle. trust my strange calculations :P
+            Rect source = new Rect(-Math.min(actual.getX(), 0), -Math.min(0, actual.getY()), actual.getWidth(), actual.getHeight());
+            //this gets the destination of the rectangle
+            Rect destination = new Rect(source);
+            destination.offsetTo(Math.max(actual.getX(), 0), Math.max(actual.getY(), 0));
+            canvas.drawBitmap(actual.getTexture(), source, destination, p);
         }
 
 

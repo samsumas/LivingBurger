@@ -27,6 +27,9 @@ public class ToDraw {
         this.selfDestroy = selfDestroy;
         this.bouncing = bouncing;
     }
+    public ToDraw(ToDraw td) {
+        this(td.getTexture(),td.getX(),td.getY(),td.getCurrentMovementTime(),td.getMaxMovementTime(),td.getSelfDestroy(),td.getBouncing());
+    }
 
     public int getWidth() {
         return texture.getWidth();

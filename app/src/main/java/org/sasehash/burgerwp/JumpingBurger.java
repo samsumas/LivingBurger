@@ -252,7 +252,9 @@ public class JumpingBurger extends WallpaperService {
         private void bounce(ToDraw td) {
             if (!isOnScreenX(td)) {
                 td.bounceX();
-            } else {
+            }
+            //no else because it makes burgers disappear in corners
+            if (!isOnScreenY(td)) {
                 td.bounceY();
             }
         }

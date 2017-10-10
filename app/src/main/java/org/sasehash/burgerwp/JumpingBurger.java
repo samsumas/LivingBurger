@@ -92,6 +92,7 @@ public class JumpingBurger extends WallpaperService {
                 }
             }
             p.setFilterBitmap(false);
+            p.setColor(Color.BLACK);
             p.setStyle(Paint.Style.FILL);
             time = System.currentTimeMillis();
             spawnPizza();
@@ -171,10 +172,9 @@ public class JumpingBurger extends WallpaperService {
             Canvas canvas = null;
             try {
                 canvas = holder.lockCanvas();
-                if (!useBackgroundImage) {
-                    canvas.drawColor(backgroundColor);
-                } else {
-                    //TODO : recheck this, may not draw bitmap everywhere
+                canvas.drawColor(backgroundColor);
+                if (useBackgroundImage) {
+                    //TODO : draws background and then bitmap over it
                     canvas.drawBitmap(backgroundImage, 0, 0, p);
                 }
 

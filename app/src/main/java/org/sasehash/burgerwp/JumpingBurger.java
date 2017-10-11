@@ -6,6 +6,7 @@ import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Picture;
 import android.graphics.Rect;
 import android.net.Uri;
 import android.os.Handler;
@@ -69,7 +70,7 @@ public class JumpingBurger extends WallpaperService {
             SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(JumpingBurger.this);
             runAway = settings.getBoolean("pref_run_away", false);
             useBackgroundImage = settings.getBoolean("pref_bg_color_or_bg_image", false);
-            backgroundColor = settings.getInt("bg_color_int",Color.BLACK);
+            backgroundColor = settings.getInt("bg_color_int", Color.BLACK);
             if (useBackgroundImage) {
                 try {
                     String filename = settings.getString("pref_bg_image", null);
@@ -216,8 +217,8 @@ public class JumpingBurger extends WallpaperService {
         }
 
         private boolean outOfScreen(ToDraw td) {
-            return ((td.getX() < 0 && td.getX() + td.getWidth() > 0) || (td.getX() + td.getWidth() > width && td.getX() <= width))
-                    || ((td.getY() < 0 && td.getHeight() + td.getHeight() > 0) || (td.getY() + td.getHeight() > height && td.getY() <= height));
+            return ((td.getX() < 0 && td.getX() + td.getWidth() > 0) || (td.getX() + td.getWidth() >= width && td.getX() <= width))
+                    || ((td.getY() < 0 && td.getHeight() + td.getHeight() > 0) || (td.getY() + td.getHeight() >= height && td.getY() <= height));
         }
 
         private boolean completelyOutOfScreen(ToDraw td) {
@@ -320,12 +321,23 @@ public class JumpingBurger extends WallpaperService {
             }
         }
 
+        //TODO : add something to rotate textures before
         public void drawOnCanvas(ToDraw actual, Canvas canvas) {
             //this gets the source rectangle. trust my strange calculations :P
             Rect source = new Rect(-Math.min(actual.getX(), 0), -Math.min(0, actual.getY()), actual.getWidth(), actual.getHeight());
             //this gets the destination of the rectangle
             Rect destination = new Rect(source);
             destination.offsetTo(Math.max(actual.getX(), 0), Math.max(actual.getY(), 0));
+
+//            Picture pic = new Picture();
+//            Canvas tempc = pic.beginRecording(width, height);
+//            tempc.rotate(-30, destination.centerX(),destination.centerY());
+//            tempc.drawBitmap(actual.getTexture(),0,0,p);
+//            tempc.drawBitmap(actual.getTexture(), source, destination, p);
+            //tempc.rotate(30, destination.centerX(),destination.centerY());
+            //pic.endRecording();
+            //pic.draw(canvas);
+
             canvas.drawBitmap(actual.getTexture(), source, destination, p);
         }
 

@@ -17,6 +17,7 @@ public class ToDraw {
     private Lambda yVec;
     private int xMultiplier=1;
     private int yMultiplier=1;
+    private float rotation=45;
 
     public ToDraw(Bitmap texture, int x, int y, long currentMovementTime, long maxMovementTime, boolean selfDestroy, int bouncing) {
         this.texture = texture;
@@ -29,6 +30,10 @@ public class ToDraw {
     }
     public ToDraw(ToDraw td) {
         this(td.getTexture(),td.getX(),td.getY(),td.getCurrentMovementTime(),td.getMaxMovementTime(),td.getSelfDestroy(),td.getBouncing());
+    }
+
+    public float getRotation() {
+        return rotation;
     }
 
     public int getWidth() {

@@ -9,9 +9,4 @@
         android:summaryOn="@string/pref_runAwayOn"
         android:title="@string/burger_touch_behaviour" />
 
-    <SwitchPreference
-        android:defaultValue="false"
-        android:key="pref_bg_color_or_bg_image"
-        android:title="@string/pref_bg_color_or_bg_image" />
-    <Preference android:summary="@string/go_to_mainactivity_for_bg_image" />
 </PreferenceScreen>

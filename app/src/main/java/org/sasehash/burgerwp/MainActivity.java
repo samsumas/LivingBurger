@@ -12,11 +12,8 @@ import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 
 import com.flask.colorpicker.ColorPickerView;
-import com.flask.colorpicker.OnColorSelectedListener;
 import com.flask.colorpicker.builder.ColorPickerClickListener;
 import com.flask.colorpicker.builder.ColorPickerDialogBuilder;
-
-import static com.flask.colorpicker.builder.ColorPickerDialogBuilder.with;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -37,6 +34,10 @@ public class MainActivity extends AppCompatActivity {
         startActivity(intent);
     }
 
+    public void chooseImage() {
+        chooseImage(null);
+    }
+
     //choose bgImage
     public void chooseImage(View view) {
         Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
@@ -51,14 +52,14 @@ public class MainActivity extends AppCompatActivity {
         ColorPickerDialogBuilder
                 .with(this)
                 .setTitle("Choose your background!")
-                .initialColor(Color.parseColor(settings.getString("bg_color","blue")))
+                .initialColor(Color.parseColor(settings.getString("bg_color", "blue")))
                 .wheelType(ColorPickerView.WHEEL_TYPE.CIRCLE)
                 .density(12)
                 .setPositiveButton("Ok", new ColorPickerClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int selectedColor, Integer[] allColors) {
                         SharedPreferences.Editor editor = settings.edit();
-                        editor.putInt("bg_color_int",selectedColor);
+                        editor.putInt("bg_color_int", selectedColor);
                         editor.apply();
                     }
                 })

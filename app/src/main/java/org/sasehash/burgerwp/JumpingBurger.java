@@ -1,3 +1,7 @@
+/*
+ * Licensed under GPL 3.0
+ */
+
 package org.sasehash.burgerwp;
 
 import android.content.SharedPreferences;
@@ -7,6 +11,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
+import android.graphics.Shader;
 import android.net.Uri;
 import android.os.Handler;
 import android.preference.PreferenceManager;
@@ -69,7 +74,7 @@ public class JumpingBurger extends WallpaperService {
             SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(JumpingBurger.this);
             runAway = settings.getBoolean("pref_run_away", false);
             useBackgroundImage = settings.getBoolean("pref_bg_color_or_bg_image", false);
-            backgroundColor = settings.getInt("bg_color_int",Color.BLACK);
+            backgroundColor = settings.getInt("bg_color_int", Color.BLACK);
             if (useBackgroundImage) {
                 try {
                     String filename = settings.getString("pref_bg_image", null);
@@ -216,8 +221,8 @@ public class JumpingBurger extends WallpaperService {
         }
 
         private boolean outOfScreen(ToDraw td) {
-            return ((td.getX() < 0 && td.getX() + td.getWidth() > 0) || (td.getX() + td.getWidth() > width && td.getX() <= width))
-                    || ((td.getY() < 0 && td.getHeight() + td.getHeight() > 0) || (td.getY() + td.getHeight() > height && td.getY() <= height));
+            return ((td.getX() < 0 && td.getX() + td.getWidth() > 0) || (td.getX() + td.getWidth() >= width && td.getX() <= width))
+                    || ((td.getY() < 0 && td.getHeight() + td.getHeight() > 0) || (td.getY() + td.getHeight() >= height && td.getY() <= height));
         }
 
         private boolean completelyOutOfScreen(ToDraw td) {
@@ -289,6 +294,27 @@ public class JumpingBurger extends WallpaperService {
             objects.add(new ToDraw(pizzaTexture, 0, 0, 0, burgerRunningTime, true, 0));
         }
 
+        private void tilingAndDraw(Bitmap bmp, Canvas canvas) {
+            int x=0,y=0;
+            //we use tiling for background pictures that are too big
+            while (x < width && y < height) {
+                canvas.drawBitmap(backgroundImage, x, y, p);
+                //draw a column
+                if(y+backgroundImage.getHeight() < height) {
+                    y+=backgroundImage.getHeight();
+                    continue;
+                }
+                //next column
+                y=0;
+                if (x +backgroundImage.getWidth() < width) {
+                    x+=backgroundImage.getWidth();
+                    continue;
+                }
+                //nothing to do anymore
+                break;
+            }
+        }
+
         private void draw() {
             long t = System.currentTimeMillis();
             SurfaceHolder holder = getSurfaceHolder();
@@ -297,7 +323,7 @@ public class JumpingBurger extends WallpaperService {
                 canvas = holder.lockCanvas();
                 canvas.drawColor(backgroundColor);
                 if (useBackgroundImage) {
-                    canvas.drawBitmap(backgroundImage, 0, 0, p);
+                    tilingAndDraw(backgroundImage,canvas);
                 }
                 for (ToDraw actual : objects) {
                     doubles.clear();
@@ -320,12 +346,23 @@ public class JumpingBurger extends WallpaperService {
             }
         }
 
+        //TODO : add something to rotate textures before
         public void drawOnCanvas(ToDraw actual, Canvas canvas) {
             //this gets the source rectangle. trust my strange calculations :P
             Rect source = new Rect(-Math.min(actual.getX(), 0), -Math.min(0, actual.getY()), actual.getWidth(), actual.getHeight());
             //this gets the destination of the rectangle
             Rect destination = new Rect(source);
             destination.offsetTo(Math.max(actual.getX(), 0), Math.max(actual.getY(), 0));
+
+//            Picture pic = new Picture();
+//            Canvas tempc = pic.beginRecording(width, height);
+//            tempc.rotate(-30, destination.centerX(),destination.centerY());
+//            tempc.drawBitmap(actual.getTexture(),0,0,p);
+//            tempc.drawBitmap(actual.getTexture(), source, destination, p);
+            //tempc.rotate(30, destination.centerX(),destination.centerY());
+            //pic.endRecording();
+            //pic.draw(canvas);
+
             canvas.drawBitmap(actual.getTexture(), source, destination, p);
         }
 

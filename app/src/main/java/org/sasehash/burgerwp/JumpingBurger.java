@@ -15,6 +15,7 @@ import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -66,14 +67,11 @@ public class JumpingBurger extends WallpaperService {
 
         public JumpingEngine() {
             SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(JumpingBurger.this);
-            checkValue("pref_run_away", settings);
-
             runAway = settings.getBoolean("pref_run_away", false);
             useBackgroundImage = settings.getBoolean("pref_bg_color_or_bg_image", false);
-            backgroundColor = Color.parseColor(settings.getString("bg_color", "black"));
+            backgroundColor = settings.getInt("bg_color_int",Color.BLACK);
             if (useBackgroundImage) {
                 try {
-                    checkValue("pref_bg_image", settings);
                     String filename = settings.getString("pref_bg_image", null);
                     if (filename == null) {
                         throw new IllegalStateException("Failed to get ImageName with intent");
@@ -82,19 +80,23 @@ public class JumpingBurger extends WallpaperService {
                         throw new IllegalStateException("Got Standard (invalid) filename");
                     }
                     Uri uri = Uri.parse(filename);
-                    InputStream is = getContentResolver().openInputStream(uri);
-                    if (is == null) {
-                        throw new IllegalStateException("Could not open Background!");
-                    }
-                    backgroundImage = BitmapFactory.decodeStream(is);
                     try {
-                        is.close();
-                    } catch (Exception e) {
-                        //well don't care about it
+                        InputStream is = getContentResolver().openInputStream(uri);
+                        backgroundImage = BitmapFactory.decodeStream(is);
+                        try {
+                            is.close();
+                        } catch (IOException e) {
+                            //well don't care about it, can't close what isn't opened lol
+                        }
+                    } catch (java.lang.SecurityException e) {
+                        //permission whatever,remove wrong preferences
+                        stopUsingBackgroundImage();
                     }
+
                 } catch (FileNotFoundException e) {
                     e.printStackTrace();
-                    useBackgroundImage = false; //continue with color instead of background
+                    //continue with color instead of background
+                    stopUsingBackgroundImage();
                 }
             }
             p.setFilterBitmap(false);
@@ -142,6 +144,13 @@ public class JumpingBurger extends WallpaperService {
                 });
                 objects.add(td);
             }
+        }
+
+        private void stopUsingBackgroundImage() {
+            SharedPreferences.Editor editor = PreferenceManager.getDefaultSharedPreferences(JumpingBurger.this).edit();
+            editor.putBoolean("pref_bg_color_or_bg_image", false);
+            editor.apply();
+            useBackgroundImage = false;
         }
 
         private void checkValue(String a, SharedPreferences settings) {
@@ -290,13 +299,13 @@ public class JumpingBurger extends WallpaperService {
                 if (useBackgroundImage) {
                     canvas.drawBitmap(backgroundImage, 0, 0, p);
                 }
-
-                doubles.clear();
                 for (ToDraw actual : objects) {
+                    doubles.clear();
                     moveObject(actual, t - time);
-                    drawOnCanvas(actual, canvas);
-                }
-                for (ToDraw actual : doubles) {
+                    //draw the doubles before the reel objects, to keep the screen from flashing!
+                    for (ToDraw td : doubles) {
+                        drawOnCanvas(td, canvas);
+                    }
                     drawOnCanvas(actual, canvas);
                 }
             } finally {

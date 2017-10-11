@@ -9,13 +9,6 @@
         android:summaryOn="@string/pref_runAwayOn"
         android:title="@string/burger_touch_behaviour" />
 
-    <ListPreference
-        android:defaultValue="1"
-        android:entries="@array/colors"
-        android:entryValues="@array/colors"
-        android:key="bg_color"
-        android:title="@string/pref_choose_bg_color" />
-
     <SwitchPreference
         android:defaultValue="false"
         android:key="pref_bg_color_or_bg_image"

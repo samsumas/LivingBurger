@@ -2,12 +2,21 @@ package org.sasehash.burgerwp;
 
 import android.app.WallpaperManager;
 import android.content.ComponentName;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
+
+import com.flask.colorpicker.ColorPickerView;
+import com.flask.colorpicker.OnColorSelectedListener;
+import com.flask.colorpicker.builder.ColorPickerClickListener;
+import com.flask.colorpicker.builder.ColorPickerDialogBuilder;
+
+import static com.flask.colorpicker.builder.ColorPickerDialogBuilder.with;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -33,6 +42,34 @@ public class MainActivity extends AppCompatActivity {
         Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
         intent.setType("image/*");
         startActivityForResult(intent, intentID);
+    }
+
+    //choose backgroundImage using cool ColorPicker found on github
+    public void chooseColor(View view) {
+        final SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(this);
+
+        ColorPickerDialogBuilder
+                .with(this)
+                .setTitle("Choose your background!")
+                .initialColor(Color.parseColor(settings.getString("bg_color","blue")))
+                .wheelType(ColorPickerView.WHEEL_TYPE.CIRCLE)
+                .density(12)
+                .setPositiveButton("Ok", new ColorPickerClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int selectedColor, Integer[] allColors) {
+                        SharedPreferences.Editor editor = settings.edit();
+                        editor.putInt("bg_color_int",selectedColor);
+                        editor.apply();
+                    }
+                })
+                .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                    }
+                })
+                .lightnessSliderOnly()
+                .build()
+                .show();
     }
 
     @Override

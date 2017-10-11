@@ -1,3 +1,7 @@
+/*
+ * Licensed under GPL 3.0
+ */
+
 package org.sasehash.burgerwp;
 
 import android.content.SharedPreferences;
@@ -6,8 +10,8 @@ import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.graphics.Picture;
 import android.graphics.Rect;
+import android.graphics.Shader;
 import android.net.Uri;
 import android.os.Handler;
 import android.preference.PreferenceManager;
@@ -290,6 +294,27 @@ public class JumpingBurger extends WallpaperService {
             objects.add(new ToDraw(pizzaTexture, 0, 0, 0, burgerRunningTime, true, 0));
         }
 
+        private void tilingAndDraw(Bitmap bmp, Canvas canvas) {
+            int x=0,y=0;
+            //we use tiling for background pictures that are too big
+            while (x < width && y < height) {
+                canvas.drawBitmap(backgroundImage, x, y, p);
+                //draw a column
+                if(y+backgroundImage.getHeight() < height) {
+                    y+=backgroundImage.getHeight();
+                    continue;
+                }
+                //next column
+                y=0;
+                if (x +backgroundImage.getWidth() < width) {
+                    x+=backgroundImage.getWidth();
+                    continue;
+                }
+                //nothing to do anymore
+                break;
+            }
+        }
+
         private void draw() {
             long t = System.currentTimeMillis();
             SurfaceHolder holder = getSurfaceHolder();
@@ -298,7 +323,7 @@ public class JumpingBurger extends WallpaperService {
                 canvas = holder.lockCanvas();
                 canvas.drawColor(backgroundColor);
                 if (useBackgroundImage) {
-                    canvas.drawBitmap(backgroundImage, 0, 0, p);
+                    tilingAndDraw(backgroundImage,canvas);
                 }
                 for (ToDraw actual : objects) {
                     doubles.clear();

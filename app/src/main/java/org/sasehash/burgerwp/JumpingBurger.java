@@ -70,6 +70,7 @@ public class JumpingBurger extends WallpaperService {
             }
         };
 
+
         public JumpingEngine() {
             /* Load values from preferences */
             SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(JumpingBurger.this);
@@ -77,10 +78,9 @@ public class JumpingBurger extends WallpaperService {
             useBackgroundImage = settings.getBoolean("pref_bg_color_or_bg_image", false);
             backgroundColor = settings.getInt("bg_color_int", Color.BLACK);
             burgerCount = Integer.parseInt(settings.getString("burger_count", Integer.toString(burgerCount)));
-            burgerSpeed = Integer.parseInt(settings.getString("burger_speed",Integer.toString(burgerSpeed)));
+            burgerSpeed = Integer.parseInt(settings.getString("burger_speed", Integer.toString(burgerSpeed)));
             pizzaCount = Integer.parseInt(settings.getString("pizza_count", Integer.toString(pizzaCount)));
-            pizzaSpeed = Integer.parseInt(settings.getString("pizza_speed",Integer.toString(pizzaSpeed)));
-
+            pizzaSpeed = Integer.parseInt(settings.getString("pizza_speed", Integer.toString(pizzaSpeed)));
 
 
             if (useBackgroundImage) {
@@ -159,6 +159,9 @@ public class JumpingBurger extends WallpaperService {
             }
         }
 
+        /**
+         * stopUsingBacjgroundImage
+         */
         private void stopUsingBackgroundImage() {
             SharedPreferences.Editor editor = PreferenceManager.getDefaultSharedPreferences(JumpingBurger.this).edit();
             editor.putBoolean("pref_bg_color_or_bg_image", false);
@@ -166,12 +169,24 @@ public class JumpingBurger extends WallpaperService {
             useBackgroundImage = false;
         }
 
+        /**
+         * checkValue
+         *
+         * @param a
+         * @param settings
+         */
         private void checkValue(String a, SharedPreferences settings) {
             if (!settings.contains(a)) {
                 throw new IllegalStateException("Cannot read " + a + " Settings from anim_preferences!");
             }
         }
 
+        /**
+         * moveObject
+         *
+         * @param td
+         * @param t
+         */
         public void moveObject(ToDraw td, long t) {
             long dt = t + td.getCurrentMovementTime();
             if (!td.timeLeft() || td.isVecNull()) {
@@ -207,37 +222,67 @@ public class JumpingBurger extends WallpaperService {
 
         }
 
+        /**
+         * Move all object with moveObject
+         *
+         * @param t
+         */
         public void moveObjects(long t) {
             for (ToDraw td : objects) {
                 moveObject(td, t);
             }
         }
 
+        /**
+         * Util module positiv
+         *
+         * @param a
+         * @param m
+         * @return
+         */
         private int modulo(int a, int m) {
-            while (a < 0) {
-                a += m;
-            }
-            while (a > m) {
-                a -= m;
-            }
-            return a;
+            return (a % m + m) % m;
         }
 
+        /**
+         * inCorner
+         *
+         * @param td
+         * @return
+         */
         private boolean inCorner(ToDraw td) {
             return (td.getX() < 0 || td.getX() + td.getWidth() > width)
                     && (td.getY() < 0 || td.getY() + td.getHeight() > height);
         }
 
+        /**
+         * outOfScreen
+         *
+         * @param td
+         * @return
+         */
         private boolean outOfScreen(ToDraw td) {
             return ((td.getX() < 0 && td.getX() + td.getWidth() > 0) || (td.getX() + td.getWidth() >= width && td.getX() <= width))
                     || ((td.getY() < 0 && td.getHeight() + td.getHeight() > 0) || (td.getY() + td.getHeight() >= height && td.getY() <= height));
         }
 
+        /**
+         * completyOutOfScreen
+         *
+         * @param td
+         * @return
+         */
         private boolean completelyOutOfScreen(ToDraw td) {
             return (td.getX() + td.getWidth() < 0 || td.getX() > width)
                     || (td.getY() + td.getHeight() < 0 || td.getY() > height);
         }
 
+        /**
+         * rectifyX
+         *
+         * @param td
+         * @return
+         */
         private int rectifyX(ToDraw td) {
             if (td.getX() < 0) {
                 return td.getX() + width;
@@ -248,6 +293,12 @@ public class JumpingBurger extends WallpaperService {
             return td.getX();
         }
 
+        /**
+         * rectifyY
+         *
+         * @param td
+         * @return
+         */
         private int rectifyY(ToDraw td) {
             if (td.getY() < 0) {
                 return td.getY() + height;
@@ -258,6 +309,11 @@ public class JumpingBurger extends WallpaperService {
             return td.getY();
         }
 
+        /**
+         * resetOnScreen
+         *
+         * @param td
+         */
         private void resetOnScreen(ToDraw td) {
             if (completelyOutOfScreen(td)) {
                 td.setX(modulo(td.getX(), width));
@@ -271,6 +327,11 @@ public class JumpingBurger extends WallpaperService {
             }
         }
 
+        /**
+         * bouce
+         *
+         * @param td
+         */
         private void bounce(ToDraw td) {
             if (!isOnScreenX(td)) {
                 td.bounceX();
@@ -281,27 +342,59 @@ public class JumpingBurger extends WallpaperService {
             }
         }
 
+        /**
+         * check if picture is on the screen
+         *
+         * @param td
+         * @return
+         */
         private boolean isOnScreen(ToDraw td) {
             return isOnScreenX(td) && isOnScreenY(td);
         }
 
+        /**
+         * check if the picure is on the screen verticaly
+         *
+         * @param td
+         * @return
+         */
         private boolean isOnScreenY(ToDraw td) {
             return td.getY() == modulo(td.getY(), height - td.getHeight());
         }
 
+        /**
+         * check if the picture is on screen horizontaly
+         *
+         * @param td
+         * @return
+         */
         private boolean isOnScreenX(ToDraw td) {
             return td.getX() == modulo(td.getX(), width - td.getWidth());
         }
 
+        /**
+         * Spanw pizza with parameter 1
+         */
         private void spawnPizza() {
             spawnPizza(1);
         }
 
+        /**
+         * Spawn pizza
+         *
+         * @param i
+         */
         private void spawnPizza(int i) {
             Bitmap pizzaTexture = BitmapFactory.decodeResource(getResources(), pizzaTextureID);
             objects.add(new ToDraw(pizzaTexture, 0, 0, 0, burgerRunningTime, true, 0, pizzaSpeed));
         }
 
+        /**
+         * tiling and draw
+         *
+         * @param bmp
+         * @param canvas
+         */
         private void tilingAndDraw(Bitmap bmp, Canvas canvas) {
             int x = 0, y = 0;
             //we use tiling for background pictures that are too big
@@ -323,6 +416,9 @@ public class JumpingBurger extends WallpaperService {
             }
         }
 
+        /**
+         * Draw
+         */
         private void draw() {
             long t = System.currentTimeMillis();
             SurfaceHolder holder = getSurfaceHolder();
@@ -375,6 +471,11 @@ public class JumpingBurger extends WallpaperService {
         }
 
 
+        /**
+         * Event - onVisibilityChanged
+         *
+         * @param visible
+         */
         @Override
         public void onVisibilityChanged(boolean visible) {
             this.visibility = visible;
@@ -385,6 +486,11 @@ public class JumpingBurger extends WallpaperService {
             }
         }
 
+        /**
+         * Event - onTouchEvent
+         *
+         * @param event
+         */
         @Override
         public void onTouchEvent(MotionEvent event) {
             super.onTouchEvent(event);
@@ -406,6 +512,12 @@ public class JumpingBurger extends WallpaperService {
              **/
         }
 
+        /**
+         * run away from Finger
+         *
+         * @param td
+         * @param event
+         */
         private void runAwayFromFinger(ToDraw td, MotionEvent event) {
             td.setCurrentMovementTime(0);
             td.setMaxMovementTime(burgerRunningTime);
@@ -441,13 +553,19 @@ public class JumpingBurger extends WallpaperService {
 
         /**
          * Let the objects rain down (to be put in the draw method)
+         *
+         * @param td
          */
         private void raining(ToDraw td) {
             raining(td, 0.0, -1.0);
         }
 
-        /*
+        /**
          * Let the objects rain in the giving vector direction (to be put in the draw method)
+         *
+         * @param td
+         * @param dirX
+         * @param dirY
          */
         private void raining(ToDraw td, double dirX, double dirY) {
             //check if not  in screen
@@ -457,6 +575,11 @@ public class JumpingBurger extends WallpaperService {
             }
         }
 
+        /**
+         * onSurfaceDestroyed
+         *
+         * @param holder
+         */
         @Override
         public void onSurfaceDestroyed(SurfaceHolder holder) {
             super.onSurfaceDestroyed(holder);
@@ -464,6 +587,14 @@ public class JumpingBurger extends WallpaperService {
             handler.removeCallbacks(drawRunner);
         }
 
+        /**
+         * onSurfaceChanged
+         *
+         * @param holder
+         * @param format
+         * @param width
+         * @param height
+         */
         @Override
         public void onSurfaceChanged(SurfaceHolder holder, int format,
                                      int width, int height) {

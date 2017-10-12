@@ -118,11 +118,9 @@ public class JumpingBurger extends WallpaperService {
             time = System.currentTimeMillis();
             spawnPizza();
             Bitmap burgerTexture = BitmapFactory.decodeResource(getResources(), burgerTextureID);
-            //using more then one burger isn't a good idea, they tended (in my testcase with 10 burgers) to overlap very quickly and
-            //soon it looked like there were only 2 or three
             for (int i = 0; i < burgerCount; i++) {
                 final int curr = i;
-                ToDraw temp = new ToDraw(burgerTexture, 0, 0, 0, burgerRunningTime, false, Integer.MAX_VALUE, burgerSpeed);
+                ToDraw temp = new ToDraw(burgerTexture, 0, 0, 0, burgerRunningTime, false, Integer.MAX_VALUE, burgerSpeed, 0, 1);
                 final int abc = i;
                 //you don't need x perfectly superposed burgers
                 temp.setxVec(new Lambda() {
@@ -137,11 +135,17 @@ public class JumpingBurger extends WallpaperService {
                         return abc;
                     }
                 });
+                temp.setrVec(new Lambda() {
+                    @Override
+                    public int l(long x) {
+                        return 1;
+                    }
+                });
                 objects.add(temp);
             }
             final Bitmap pizzaTexture = BitmapFactory.decodeResource(getResources(), pizzaTextureID);
             for (int i = 0; i < pizzaCount; i++) {
-                ToDraw td = new ToDraw(pizzaTexture, 0, 0, 0, burgerRunningTime, true, 0, pizzaSpeed);
+                ToDraw td = new ToDraw(pizzaTexture, 0, 0, 0, burgerRunningTime, true, 0, pizzaSpeed, 0, 1);
                 final int abc = i;
                 td.setxVec(new Lambda() {
                     @Override
@@ -192,8 +196,8 @@ public class JumpingBurger extends WallpaperService {
             if (!td.timeLeft() || td.isVecNull()) {
                 return;
             }
-            td.addToX(td.getxVec(t));
-            td.addToY(td.getyVec(t));
+            td.addTo(td.getxVec(t), td.getyVec(t));
+            td.addTo(td.getrVec(t));
             td.setCurrentMovementTime(dt);
             if (!isOnScreen(td)) {
                 if (td.getBouncing() > 0) {
@@ -215,7 +219,6 @@ public class JumpingBurger extends WallpaperService {
 
                 } else {
                     //TODO function "going from left to right" is broken. will fix this another day
-                    //objects.remove(td);
                     resetOnScreen(td);
                 }
             }
@@ -386,7 +389,7 @@ public class JumpingBurger extends WallpaperService {
          */
         private void spawnPizza(int i) {
             Bitmap pizzaTexture = BitmapFactory.decodeResource(getResources(), pizzaTextureID);
-            objects.add(new ToDraw(pizzaTexture, 0, 0, 0, burgerRunningTime, true, 0, pizzaSpeed));
+            objects.add(new ToDraw(pizzaTexture, 0, 0, 0, burgerRunningTime, true, 0, pizzaSpeed, 0, 1));
         }
 
         /**
@@ -397,7 +400,7 @@ public class JumpingBurger extends WallpaperService {
          */
         private void tilingAndDraw(Bitmap bmp, Canvas canvas) {
             int x = 0, y = 0;
-            //we use tiling for background pictures that are too big
+            //we use tiling for background pictures that are too small
             while (x < width && y < height) {
                 canvas.drawBitmap(backgroundImage, x, y, p);
                 //draw a column
@@ -458,16 +461,9 @@ public class JumpingBurger extends WallpaperService {
             Rect destination = new Rect(source);
             destination.offsetTo(Math.max(actual.getX(), 0), Math.max(actual.getY(), 0));
 
-//            Picture pic = new Picture();
-//            Canvas tempc = pic.beginRecording(width, height);
-//            tempc.rotate(-30, destination.centerX(),destination.centerY());
-//            tempc.drawBitmap(actual.getTexture(),0,0,p);
-//            tempc.drawBitmap(actual.getTexture(), source, destination, p);
-            //tempc.rotate(30, destination.centerX(),destination.centerY());
-            //pic.endRecording();
-            //pic.draw(canvas);
+            //canvas.drawBitmap(actual.getTexture(), source, destination, p);
 
-            canvas.drawBitmap(actual.getTexture(), source, destination, p);
+            canvas.drawBitmap(actual.getTexture(), actual.getM(), p);
         }
 
 
@@ -536,7 +532,6 @@ public class JumpingBurger extends WallpaperService {
             }
             final int a = (int) Math.round(vecX);
             final int b = (int) Math.round(vecY);
-            td.resetMultipliers();
             td.setxVec(new Lambda() {
                 @Override
                 public int l(long x) {
@@ -547,6 +542,12 @@ public class JumpingBurger extends WallpaperService {
                 @Override
                 public int l(long x) {
                     return b;
+                }
+            });
+            td.setrVec(new Lambda() {
+                @Override
+                public int l(long x) {
+                    return 1;
                 }
             });
         }

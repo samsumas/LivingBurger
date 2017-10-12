@@ -2,14 +2,14 @@
  * Licensed under GPL 3.0
  */
 
+/*
+ * Licensed under GPL 3.0
+ */
+
 package org.sasehash.burgerwp;
 
 import android.graphics.Bitmap;
 import android.graphics.Matrix;
-
-/**
- * Created by sami on 08/10/17.
- */
 
 public class ToDraw {
     private Bitmap texture;
@@ -19,7 +19,7 @@ public class ToDraw {
     private int bouncing;
     private Lambda xVec;
     private Lambda yVec;
-    private Lambda rVec= new Lambda() {
+    private Lambda rVec = new Lambda() {
         @Override
         public int l(long x) {
             return 0;
@@ -29,38 +29,35 @@ public class ToDraw {
     private int yMultiplier = 1;
     private int speed;
     //omg this looks nice
-    private Matrix m;
-    private int x,y;
+    private Matrix manipulation;
+    private int x, y;
     private float rotation;
-    private float scaler=1;
+    private float scaler = 1;
 
-
-    public Matrix getM() {
-        return m;
-    }
-
-    public void setM(Matrix m) {
-        this.m = m;
-    }
 
     public ToDraw(Bitmap texture, int x, int y, long currentMovementTime, long maxMovementTime, boolean selfDestroy, int bouncing, int speed, float rotation, float scaler) {
         this.texture = texture;
-        this.m = new Matrix();
-        this.scaler=scaler;
-        this.rotation=rotation;
+        this.manipulation = new Matrix();
+        this.rotation = rotation;
         this.addTo(rotation);
-        m.setTranslate(x, y);
-        this.x=x;
-        this.y=y;
+        this.x = x;
+        this.y = y;
+        manipulation.setTranslate(x, y);
         this.currentMovementTime = currentMovementTime;
         this.maxMovementTime = maxMovementTime;
         this.selfDestroy = selfDestroy;
         this.bouncing = bouncing;
         this.speed = speed;
+        this.scaler = scaler;
+        manipulation.preScale(scaler, scaler);
     }
 
     public ToDraw(ToDraw td) {
-        this(td.getTexture(), td.getX(), td.getY(), td.getCurrentMovementTime(), td.getMaxMovementTime(), td.getSelfDestroy(), td.getBouncing(), td.getSpeed(), td.getRotation(),td.getScaler());
+        this(td.getTexture(), td.getX(), td.getY(), td.getCurrentMovementTime(), td.getMaxMovementTime(), td.getSelfDestroy(), td.getBouncing(), td.getSpeed(), td.getRotation(), td.getScaler());
+    }
+
+    public Matrix getManipulation() {
+        return manipulation;
     }
 
     public float getRotation() {
@@ -68,6 +65,7 @@ public class ToDraw {
     }
 
     public void setRotation(float rotation) {
+        manipulation.setRotate(rotation);
         this.rotation = rotation;
     }
 
@@ -75,18 +73,28 @@ public class ToDraw {
         return scaler;
     }
 
-    public void setScaler(float scaler) {
+    public void scale(float scaler) {
+        manipulation.preScale(scaler, scaler);
         this.scaler = scaler;
     }
 
+    private void recreate(int x, int y) {
+        manipulation.reset();
+        manipulation.setTranslate(x, y);
+        manipulation.preRotate(rotation, getMiddleX(), getMiddleY());
+        manipulation.preScale(scaler, scaler);
+    }
+
     public void setTranslateX(int x) {
-        m.setTranslate(x, y);
-        this.x=x;
+        //warning : when setting the translation, it could be that the rotation gets lost
+        //jep, the matrix implementation is slightly bugged
+        recreate(x, y);
+        this.x = x;
     }
 
     public void setTranslateY(int y) {
-        m.setTranslate(x, y);
-        this.y=y;
+        recreate(x, y);
+        this.y = y;
     }
 
     public int getSpeed() {
@@ -98,11 +106,11 @@ public class ToDraw {
     }
 
     public int getWidth() {
-        return texture.getWidth();
+        return Math.round(scaler * texture.getWidth());
     }
 
     public int getHeight() {
-        return texture.getHeight();
+        return Math.round(scaler * texture.getHeight());
     }
 
     public void bounceX() {
@@ -182,24 +190,29 @@ public class ToDraw {
     }
 
     public void setX(int x) {
-        setTranslateX(x);
+        int relative = x - this.x;
+        //setTranslateX(x);
+        manipulation.postTranslate(relative, 0);
+        this.x = x;
     }
 
     public void addTo(int x, int y) {
-        m.postTranslate(x, y);
-        this.x+=x;
-        this.y+=y;
+        manipulation.postTranslate(x, y);
+        this.x += x;
+        this.y += y;
     }
+
     public int getMiddleX() {
-        return (int) Math.round(texture.getWidth()*scaler/2);
+        return Math.round(texture.getWidth() * scaler / 2);
     }
+
     public int getMiddleY() {
-        return (int) Math.round(texture.getHeight()*scaler/2);
+        return Math.round(texture.getHeight() * scaler / 2);
     }
 
     public void addTo(float rotation) {
-        m.preRotate(rotation,getMiddleX(),getMiddleY());
-        this.rotation+=rotation;
+        manipulation.preRotate(rotation, getMiddleX(), getMiddleY());
+        this.rotation += rotation;
     }
 
     public int getY() {
@@ -207,7 +220,10 @@ public class ToDraw {
     }
 
     public void setY(int y) {
-        setTranslateY(y);
+        int relative = y - this.y;
+        //setTranslateY(y);
+        manipulation.postTranslate(0, relative);
+        this.y = y;
     }
 
     public long getCurrentMovementTime() {
@@ -224,5 +240,10 @@ public class ToDraw {
 
     public void setMaxMovementTime(long maxMovementTime) {
         this.maxMovementTime = maxMovementTime;
+    }
+
+    public void resetMult() {
+        xMultiplier = 1;
+        yMultiplier = 1;
     }
 }

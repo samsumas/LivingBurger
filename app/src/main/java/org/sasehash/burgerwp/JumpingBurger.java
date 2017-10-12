@@ -2,6 +2,10 @@
  * Licensed under GPL 3.0
  */
 
+/*
+ * Licensed under GPL 3.0
+ */
+
 package org.sasehash.burgerwp;
 
 import android.content.SharedPreferences;
@@ -10,7 +14,6 @@ import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.graphics.Rect;
 import android.net.Uri;
 import android.os.Handler;
 import android.preference.PreferenceManager;
@@ -39,9 +42,6 @@ public class JumpingBurger extends WallpaperService {
         private final double NEARLY_ZERO = 0.1;
         /* Values that can be tweaked */
         private final boolean runAway;
-        private int burgerSpeed = 5;
-        private int pizzaSpeed = 5;
-        private int heartSpeed = 5;
         private final int burgerRunningTime = Integer.MAX_VALUE;
         private final int pizzaRunningTime = Integer.MAX_VALUE;
         private final int heartRunningTime = Integer.MAX_VALUE;
@@ -49,9 +49,12 @@ public class JumpingBurger extends WallpaperService {
         private final int heartTextureID = R.drawable.heart;
         private final int pizzaTextureID = R.drawable.pizza;
         private final int backgroundColor;
+        private final int sleepBetweenRedraws = 35;
+        private int burgerSpeed = 5;
+        private int pizzaSpeed = 5;
+        private int heartSpeed = 5;
         private int burgerCount = 20;
         private int pizzaCount = 20;
-        private final int sleepBetweenRedraws = 35;
         /* Values needed internally */
         private Handler handler = new Handler();
         private boolean visibility = true;
@@ -120,7 +123,7 @@ public class JumpingBurger extends WallpaperService {
             Bitmap burgerTexture = BitmapFactory.decodeResource(getResources(), burgerTextureID);
             for (int i = 0; i < burgerCount; i++) {
                 final int curr = i;
-                ToDraw temp = new ToDraw(burgerTexture, 0, 0, 0, burgerRunningTime, false, Integer.MAX_VALUE, burgerSpeed, 0, 1);
+                ToDraw temp = new ToDraw(burgerTexture, 0, 0, 0, burgerRunningTime, false, Integer.MAX_VALUE, burgerSpeed, 0, (float) Math.random() + 0.5F);
                 final int abc = i;
                 //you don't need x perfectly superposed burgers
                 temp.setxVec(new Lambda() {
@@ -145,7 +148,7 @@ public class JumpingBurger extends WallpaperService {
             }
             final Bitmap pizzaTexture = BitmapFactory.decodeResource(getResources(), pizzaTextureID);
             for (int i = 0; i < pizzaCount; i++) {
-                ToDraw td = new ToDraw(pizzaTexture, 0, 0, 0, burgerRunningTime, true, 0, pizzaSpeed, 0, 1);
+                ToDraw td = new ToDraw(pizzaTexture, 0, 0, 0, burgerRunningTime, true, 0, pizzaSpeed, 0, (float) Math.random() + 0.5F);
                 final int abc = i;
                 td.setxVec(new Lambda() {
                     @Override
@@ -199,6 +202,7 @@ public class JumpingBurger extends WallpaperService {
             td.addTo(td.getxVec(t), td.getyVec(t));
             td.addTo(td.getrVec(t));
             td.setCurrentMovementTime(dt);
+            float rotationBackup = td.getRotation();
             if (!isOnScreen(td)) {
                 if (td.getBouncing() > 0) {
                     bounce(td);
@@ -221,6 +225,10 @@ public class JumpingBurger extends WallpaperService {
                     //TODO function "going from left to right" is broken. will fix this another day
                     resetOnScreen(td);
                 }
+            }
+
+            if (Math.abs(rotationBackup - td.getRotation()) > NEARLY_ZERO) {
+                throw new IllegalStateException("Rotation changed, from " + rotationBackup + " to " + td.getRotation());
             }
 
         }
@@ -437,9 +445,9 @@ public class JumpingBurger extends WallpaperService {
                     moveObject(actual, t - time);
                     //draw the doubles before the reel objects, to keep the screen from flashing!
                     for (ToDraw td : doubles) {
-                        drawOnCanvas(td, canvas);
+                        canvas.drawBitmap(td.getTexture(), td.getManipulation(), p);
                     }
-                    drawOnCanvas(actual, canvas);
+                    canvas.drawBitmap(actual.getTexture(), actual.getManipulation(), p);
                 }
             } finally {
                 if (canvas != null) {
@@ -451,19 +459,6 @@ public class JumpingBurger extends WallpaperService {
             if (visibility) {
                 handler.postDelayed(drawRunner, sleepBetweenRedraws);
             }
-        }
-
-        //TODO : add something to rotate textures before
-        public void drawOnCanvas(ToDraw actual, Canvas canvas) {
-            //this gets the source rectangle. trust my strange calculations :P
-            Rect source = new Rect(-Math.min(actual.getX(), 0), -Math.min(0, actual.getY()), actual.getWidth(), actual.getHeight());
-            //this gets the destination of the rectangle
-            Rect destination = new Rect(source);
-            destination.offsetTo(Math.max(actual.getX(), 0), Math.max(actual.getY(), 0));
-
-            //canvas.drawBitmap(actual.getTexture(), source, destination, p);
-
-            canvas.drawBitmap(actual.getTexture(), actual.getM(), p);
         }
 
 
@@ -532,6 +527,7 @@ public class JumpingBurger extends WallpaperService {
             }
             final int a = (int) Math.round(vecX);
             final int b = (int) Math.round(vecY);
+            td.resetMult();
             td.setxVec(new Lambda() {
                 @Override
                 public int l(long x) {

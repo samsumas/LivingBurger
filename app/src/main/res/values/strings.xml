@@ -13,7 +13,10 @@
     <string name="burger_touch_behaviour">Afraid from humans?</string>
     <string name="pref_runAwayOn">Run away from tapping</string>
     <string name="pref_runAwayOff">Run towards tapping</string>
-
+    <string name="pref_pizza_count">Click here to order n pizzas!</string>
+    <string name="pref_burger_count">Click here to order n Burgers!</string>
+    <string name="pref_pizza_speed">Change pizza delivery speed</string>
+    <string name="pref_burger_speed">Change burger delivery speed</string>
 
     <!-- Example General settings -->
     <string name="pref_header_general">General</string>

@@ -11,7 +11,6 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
-import android.graphics.Shader;
 import android.net.Uri;
 import android.os.Handler;
 import android.preference.PreferenceManager;
@@ -40,8 +39,9 @@ public class JumpingBurger extends WallpaperService {
         private final double NEARLY_ZERO = 0.1;
         /* Values that can be tweaked */
         private final boolean runAway;
-        private final int burgerSpeed = 5;
-        private final int heartSpeed = 5;
+        private int burgerSpeed = 5;
+        private int pizzaSpeed = 5;
+        private int heartSpeed = 5;
         private final int burgerRunningTime = Integer.MAX_VALUE;
         private final int pizzaRunningTime = Integer.MAX_VALUE;
         private final int heartRunningTime = Integer.MAX_VALUE;
@@ -49,8 +49,8 @@ public class JumpingBurger extends WallpaperService {
         private final int heartTextureID = R.drawable.heart;
         private final int pizzaTextureID = R.drawable.pizza;
         private final int backgroundColor;
-        private final int burgerCount = 20;
-        private final int pizzaCount = 20;
+        private int burgerCount = 20;
+        private int pizzaCount = 20;
         private final int sleepBetweenRedraws = 35;
         /* Values needed internally */
         private Handler handler = new Handler();
@@ -71,10 +71,18 @@ public class JumpingBurger extends WallpaperService {
         };
 
         public JumpingEngine() {
+            /* Load values from preferences */
             SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(JumpingBurger.this);
             runAway = settings.getBoolean("pref_run_away", false);
             useBackgroundImage = settings.getBoolean("pref_bg_color_or_bg_image", false);
             backgroundColor = settings.getInt("bg_color_int", Color.BLACK);
+            burgerCount = Integer.parseInt(settings.getString("burger_count", Integer.toString(burgerCount)));
+            burgerSpeed = Integer.parseInt(settings.getString("burger_speed",Integer.toString(burgerSpeed)));
+            pizzaCount = Integer.parseInt(settings.getString("pizza_count", Integer.toString(pizzaCount)));
+            pizzaSpeed = Integer.parseInt(settings.getString("pizza_speed",Integer.toString(pizzaSpeed)));
+
+
+
             if (useBackgroundImage) {
                 try {
                     String filename = settings.getString("pref_bg_image", null);
@@ -114,7 +122,7 @@ public class JumpingBurger extends WallpaperService {
             //soon it looked like there were only 2 or three
             for (int i = 0; i < burgerCount; i++) {
                 final int curr = i;
-                ToDraw temp = new ToDraw(burgerTexture, 0, 0, 0, burgerRunningTime, false, Integer.MAX_VALUE);
+                ToDraw temp = new ToDraw(burgerTexture, 0, 0, 0, burgerRunningTime, false, Integer.MAX_VALUE, burgerSpeed);
                 final int abc = i;
                 //you don't need x perfectly superposed burgers
                 temp.setxVec(new Lambda() {
@@ -133,7 +141,7 @@ public class JumpingBurger extends WallpaperService {
             }
             final Bitmap pizzaTexture = BitmapFactory.decodeResource(getResources(), pizzaTextureID);
             for (int i = 0; i < pizzaCount; i++) {
-                ToDraw td = new ToDraw(pizzaTexture, 0, 0, 0, burgerRunningTime, true, 0);
+                ToDraw td = new ToDraw(pizzaTexture, 0, 0, 0, burgerRunningTime, true, 0, pizzaSpeed);
                 final int abc = i;
                 td.setxVec(new Lambda() {
                     @Override
@@ -291,23 +299,23 @@ public class JumpingBurger extends WallpaperService {
 
         private void spawnPizza(int i) {
             Bitmap pizzaTexture = BitmapFactory.decodeResource(getResources(), pizzaTextureID);
-            objects.add(new ToDraw(pizzaTexture, 0, 0, 0, burgerRunningTime, true, 0));
+            objects.add(new ToDraw(pizzaTexture, 0, 0, 0, burgerRunningTime, true, 0, pizzaSpeed));
         }
 
         private void tilingAndDraw(Bitmap bmp, Canvas canvas) {
-            int x=0,y=0;
+            int x = 0, y = 0;
             //we use tiling for background pictures that are too big
             while (x < width && y < height) {
                 canvas.drawBitmap(backgroundImage, x, y, p);
                 //draw a column
-                if(y+backgroundImage.getHeight() < height) {
-                    y+=backgroundImage.getHeight();
+                if (y + backgroundImage.getHeight() < height) {
+                    y += backgroundImage.getHeight();
                     continue;
                 }
                 //next column
-                y=0;
-                if (x +backgroundImage.getWidth() < width) {
-                    x+=backgroundImage.getWidth();
+                y = 0;
+                if (x + backgroundImage.getWidth() < width) {
+                    x += backgroundImage.getWidth();
                     continue;
                 }
                 //nothing to do anymore
@@ -323,7 +331,7 @@ public class JumpingBurger extends WallpaperService {
                 canvas = holder.lockCanvas();
                 canvas.drawColor(backgroundColor);
                 if (useBackgroundImage) {
-                    tilingAndDraw(backgroundImage,canvas);
+                    tilingAndDraw(backgroundImage, canvas);
                 }
                 for (ToDraw actual : objects) {
                     doubles.clear();
@@ -407,9 +415,9 @@ public class JumpingBurger extends WallpaperService {
             //this android runs from humans away, depending on the runAway value
             double size = Math.sqrt(dx * dx + dy * dy);
             double vecX = ((double) dx) / size;
-            vecX *= burgerSpeed;
+            vecX *= td.getSpeed();
             double vecY = ((double) dy) / size;
-            vecY *= burgerSpeed;
+            vecY *= td.getSpeed();
             if (!runAway) {
                 vecX = -vecX;
                 vecY = -vecY;

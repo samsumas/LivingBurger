@@ -26,7 +26,11 @@ import android.support.v7.app.ActionBar;
 import android.text.TextUtils;
 import android.view.MenuItem;
 
+import java.util.ArrayList;
 import java.util.List;
+
+import static java.lang.Integer.parseInt;
+import static org.sasehash.burgerwp.R.drawable.pizza;
 
 
 /**
@@ -198,6 +202,33 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
             super.onCreate(savedInstanceState);
             addPreferencesFromResource(R.xml.anim_preferences);
             setHasOptionsMenu(true);
+
+            Preference.OnPreferenceChangeListener checkInteger = new Preference.OnPreferenceChangeListener() {
+                @Override
+                public boolean onPreferenceChange(Preference preference, Object newValue) {
+                    try {
+                        int value = Integer.parseInt(newValue.toString());
+                        //if parsable without throwing errors
+                        return true;
+                    } catch (NumberFormatException e) {
+                        return false;
+                    }
+                }
+            };
+
+            Preference burgerCount = getPreferenceScreen().findPreference("burger_count");
+            burgerCount.setOnPreferenceChangeListener(checkInteger);
+
+            String[] checkIntegerPrefs = new String[] {
+                    "burger_count",
+                    "burger_speed",
+                    "pizza_count",
+                    "pizza_speed"
+            };
+            //adds integer-validator for all integerValues
+            for (String s: checkIntegerPrefs) {
+                getPreferenceScreen().findPreference(s).setOnPreferenceChangeListener(checkInteger);
+            }
         }
 
 
@@ -209,6 +240,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
                 startActivity(new Intent(getActivity(), SettingsActivity.class));
                 return true;
             }
+
             return super.onOptionsItemSelected(item);
         }
     }

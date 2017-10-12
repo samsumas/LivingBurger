@@ -22,8 +22,9 @@ public class ToDraw {
     private int xMultiplier=1;
     private int yMultiplier=1;
     private float rotation=45;
+    private int speed;
 
-    public ToDraw(Bitmap texture, int x, int y, long currentMovementTime, long maxMovementTime, boolean selfDestroy, int bouncing) {
+    public ToDraw(Bitmap texture, int x, int y, long currentMovementTime, long maxMovementTime, boolean selfDestroy, int bouncing, int speed) {
         this.texture = texture;
         this.x = x;
         this.y = y;
@@ -31,9 +32,18 @@ public class ToDraw {
         this.maxMovementTime = maxMovementTime;
         this.selfDestroy = selfDestroy;
         this.bouncing = bouncing;
+        this.speed=speed;
     }
     public ToDraw(ToDraw td) {
-        this(td.getTexture(),td.getX(),td.getY(),td.getCurrentMovementTime(),td.getMaxMovementTime(),td.getSelfDestroy(),td.getBouncing());
+        this(td.getTexture(),td.getX(),td.getY(),td.getCurrentMovementTime(),td.getMaxMovementTime(),td.getSelfDestroy(),td.getBouncing(),td.getSpeed());
+    }
+
+    public int getSpeed() {
+        return speed;
+    }
+
+    public void setSpeed(int speed) {
+        this.speed = speed;
     }
 
     public float getRotation() {

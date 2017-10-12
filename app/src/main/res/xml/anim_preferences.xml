@@ -12,5 +12,31 @@
         android:summaryOff="@string/pref_runAwayOff"
         android:summaryOn="@string/pref_runAwayOn"
         android:title="@string/burger_touch_behaviour" />
+    <EditTextPreference
+        android:defaultValue="20"
+        android:key="pizza_count"
+        android:selectAllOnFocus="true"
+        android:singleLine="true"
+        android:title="@string/pref_pizza_count" />
+    <EditTextPreference
+        android:defaultValue="5"
+        android:key="pizza_speed"
+        android:selectAllOnFocus="true"
+        android:singleLine="true"
+        android:title="@string/pref_pizza_speed" />
+    <EditTextPreference
+        android:defaultValue="20"
+        android:key="burger_count"
+        android:selectAllOnFocus="true"
+        android:singleLine="true"
+        android:title="@string/pref_burger_count" />
+    <EditTextPreference
+        android:defaultValue="5"
+        android:key="burger_speed"
+        android:selectAllOnFocus="true"
+        android:singleLine="true"
+        android:title="@string/pref_pizza_speed" />
+
+
 
 </PreferenceScreen>

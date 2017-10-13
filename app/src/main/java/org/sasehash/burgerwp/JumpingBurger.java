@@ -157,6 +157,9 @@ public class JumpingBurger extends WallpaperService {
          * rotation
          * scalingFactor
          */
+        /**
+         * Loads config from sharedpreferences into the engine.
+         */
         private void loadConfig() {
             SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(JumpingBurger.this);
             Set<String> objectNames = settings.getStringSet("objects", null);
@@ -166,13 +169,14 @@ public class JumpingBurger extends WallpaperService {
             for (String s : objectNames) {
                 Bitmap texture = loadImage(settings, s);
                 int count = Integer.parseInt(settings.getString(s + "_count", "1"));
+
                 int x = Integer.parseInt(settings.getString(s + "_x", "0"));
                 int y = Integer.parseInt(settings.getString(s + "_y", "0"));
                 long actualTime = Long.parseLong(settings.getString(s + "_actualTime", "0"));
                 long totalTime;
                 totalTime = Long.parseLong(settings.getString(s + "_totalTime", "0"));
                 if (totalTime < 0) {
-                    //totalTime = -1 is a synonym for infinity (easier to type then typing 99999999999999999999)
+                    //totalTime = -1 is a synonym for infinity (easier to type then typing 99999999999999999999 and trying avoiding overflows)
                     totalTime = Long.MAX_VALUE;
                 }
                 boolean selfDestroy = Boolean.parseBoolean(settings.getString(s + "_selfDestroy", "false"));
@@ -180,6 +184,7 @@ public class JumpingBurger extends WallpaperService {
                 int speed = Integer.parseInt(settings.getString(s + "_speed", "0"));
                 float rotation = Float.parseFloat(settings.getString(s + "_rotation", "0"));
                 float scalingFactor = Float.parseFloat(settings.getString(s + "_scalingFactor", "1"));
+                String c = ";";
                 for (int i = 0; i < count; i++) {
                     ToDraw td = new ToDraw(texture, x, y, actualTime, totalTime, selfDestroy, bouncing, speed, rotation, scalingFactor);
                     final int abc = count;
@@ -188,7 +193,7 @@ public class JumpingBurger extends WallpaperService {
                     td.setxVec(new Lambda() {
                         @Override
                         public int l(long x) {
-                            return abc-abc2;
+                            return abc - abc2;
                         }
                     });
                     td.setyVec(new Lambda() {
@@ -203,11 +208,10 @@ public class JumpingBurger extends WallpaperService {
                             return 1;
                         }
                     });
-
                 }
-
             }
         }
+
 
         private Bitmap loadImage(SharedPreferences settings, String s) {
             Bitmap texture;

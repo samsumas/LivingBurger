@@ -10,31 +10,32 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.ParcelFileDescriptor;
 import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.text.style.URLSpan;
 import android.view.View;
+import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.HorizontalScrollView;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
+import android.widget.Switch;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.widget.ToggleButton;
 
+import java.io.File;
 import java.io.FileDescriptor;
+import java.io.FileWriter;
 import java.io.IOException;
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 
-import static java.lang.Integer.parseInt;
 import static org.sasehash.burgerwp.Type.BOOL;
 import static org.sasehash.burgerwp.Type.FLOAT;
 import static org.sasehash.burgerwp.Type.IMAGE;
@@ -79,8 +80,8 @@ public class Configurator extends AppCompatActivity {
         if (resultCode == RESULT_OK) {
             String helper = intentKeys.get(requestCode);
             intentKeys.remove(requestCode);
-            newSettings.putString(helper+"_image",data.getDataString());
-            newSettings.putString(helper+"_isExternalResource","true");
+            newSettings.putString(helper + "_image", data.getDataString());
+            newSettings.putString(helper + "_isExternalResource", "true");
         }
     }
 
@@ -116,6 +117,69 @@ public class Configurator extends AppCompatActivity {
         newSettings.apply();
         //close after applying
         cancelChanges(v);
+    }
+
+    public void exportChanges(View v) {
+        SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(this);
+        Set<String> objectNames = settings.getStringSet("objects", null);
+        StringBuilder output = new StringBuilder();
+        char c = ';';
+
+        if (objectNames == null) {
+            throw new IllegalStateException("Could not read config!");
+        }
+        for (String s : objectNames) {
+            doubleAppend(output, settings.getString(s + "_count", "1"));
+            doubleAppend(output, settings.getString(s + "_x", "0"));
+            doubleAppend(output, settings.getString(s + "_y", "0"));
+            doubleAppend(output, settings.getString(s + "_actualTime", "0"));
+            doubleAppend(output, settings.getString(s + "_totalTime", "0"));
+            doubleAppend(output, settings.getString(s + "_selfDestroy", "false"));
+            doubleAppend(output, settings.getString(s + "_bouncing", "false"));
+            doubleAppend(output, settings.getString(s + "_speed", "0"));
+            doubleAppend(output, settings.getString(s + "_rotation", "0"));
+            doubleAppend(output, settings.getString(s + "_scalingFactor", "1"));
+            output.append('\n');
+        }
+        //TODO:ask the user for a destination
+        String timeStamp = new java.util.Date().toString();
+        String fileName = "customConfigLivingBurger" + timeStamp +".csv";
+        File exportDestination = new File(Environment.getExternalStoragePublicDirectory(
+                Environment.DIRECTORY_DOWNLOADS), fileName);
+        try {
+            FileWriter writer = new FileWriter(exportDestination);
+            writer.write(output.toString());
+            Toast.makeText(this, "Wrote File to " + exportDestination.getAbsolutePath(), Toast.LENGTH_SHORT).show();
+        } catch (IOException e) {
+            Toast.makeText(this, "Error while writing File to " + exportDestination.getAbsolutePath(), Toast.LENGTH_SHORT).show();
+            e.printStackTrace();
+        }
+
+    }
+
+    private void doubleAppend(StringBuilder s, String s2) {
+        s.append(s2);
+        s.append(';');
+    }
+
+
+    /* Checks if external storage is available for read and write */
+    public boolean isExternalStorageWritable() {
+        String state = Environment.getExternalStorageState();
+        if (Environment.MEDIA_MOUNTED.equals(state)) {
+            return true;
+        }
+        return false;
+    }
+
+    /* Checks if external storage is available to at least read */
+    public boolean isExternalStorageReadable() {
+        String state = Environment.getExternalStorageState();
+        if (Environment.MEDIA_MOUNTED.equals(state) ||
+                Environment.MEDIA_MOUNTED_READ_ONLY.equals(state)) {
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -213,6 +277,15 @@ public class Configurator extends AppCompatActivity {
         addHeader(this.v);
     }
 
+    private CompoundButton.OnCheckedChangeListener generateToggleButtonListener(final String s, final int i) {
+        return new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                newSettings.putString(s + "_" + prefvalues[i], Boolean.toString(isChecked));
+            }
+        };
+    }
+
     private TextWatcher generateEditTextListener(final String str, final int i) {
         return new TextWatcher() {
             @Override
@@ -227,22 +300,23 @@ public class Configurator extends AppCompatActivity {
 
             @Override
             public void afterTextChanged(Editable s) {
+                String checkedValue = null;
                 try {
                     switch (prefvaluesType[i]) {
                         case BOOL:
-                            Boolean.parseBoolean(s.toString());
+                            //bools doesn't use this method
                             break;
                         case FLOAT:
-                            Float.parseFloat(s.toString());
+                            checkedValue = Float.toString(Float.parseFloat(s.toString()));
                             break;
                         case IMAGE:
                             //TODO : check if value is valid
                             break;
                         case INT:
-                            parseInt(s.toString());
+                            checkedValue = Integer.toString(Integer.parseInt(s.toString()));
                             break;
                         case LONG:
-                            Long.parseLong(s.toString());
+                            checkedValue = Long.toString(Long.parseLong(s.toString()));
                             break;
                         default:
                             throw new IllegalStateException("Maybe you forgot to implement something");
@@ -250,14 +324,17 @@ public class Configurator extends AppCompatActivity {
                 } catch (Exception e) {
                     Toast error = Toast.makeText(Configurator.this, "Incorrect value, must be " + prefvaluesType[i], Toast.LENGTH_SHORT);
                     error.show();
-                    if (prefvaluesType[i] == BOOL) {
-                        s = Editable.Factory.getInstance().newEditable("false");
-                    } else {
-                        s = Editable.Factory.getInstance().newEditable("0");
-                    }
+                    //bools doesn't use this method!
+                    s = Editable.Factory.getInstance().newEditable("0");
+
+                    return;
                 }
                 //put it in the editor
-                newSettings.putString(str + "_" + prefvalues[i], s.toString());
+                if (checkedValue != null) {
+                    newSettings.putString(str + "_" + prefvalues[i], checkedValue);
+                } else {
+                    newSettings.putString(str + "_" + prefvalues[i], s.toString());
+                }
             }
         };
     }
@@ -283,14 +360,11 @@ public class Configurator extends AppCompatActivity {
             final String helper = s;
             TableRow current = new TableRow(this);
             current.setGravity(View.TEXT_ALIGNMENT_CENTER);
-            //TODO : add image
             for (int i = 0; i < prefvalues.length; i++) {
                 if (prefvaluesType[i] == BOOL) {
-                    ToggleButton tb = new ToggleButton(this);
+                    Switch tb = new Switch(this);
                     tb.setChecked(Boolean.parseBoolean(settings.getString(s + "_" + prefvalues[i], "false")));
-                    tb.setTextOff("False");
-                    tb.setTextOn("True");
-                    tb.addTextChangedListener(generateEditTextListener(prefvalues[i], i));
+                    tb.setOnCheckedChangeListener(generateToggleButtonListener(s, i));
                     current.addView(tb);
                     continue;
                 }

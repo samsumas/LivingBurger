@@ -16,15 +16,11 @@ public class ToDraw {
     private long currentMovementTime;
     private long maxMovementTime;
     private boolean selfDestroy = false;
-    private int bouncing;
-    private Lambda xVec;
-    private Lambda yVec;
-    private Lambda rVec = new Lambda() {
-        @Override
-        public int l(long x) {
-            return 0;
-        }
-    };
+    private boolean bouncing;
+    // standard value is a lambda that always returns 0, to avoid NullpointerExceptions when Vecs aren't set manually
+    private Lambda xVec = generateZeroLambda();
+    private Lambda yVec = generateZeroLambda();
+    private Lambda rVec = generateZeroLambda();
     private int xMultiplier = 1;
     private int yMultiplier = 1;
     private int speed;
@@ -34,8 +30,21 @@ public class ToDraw {
     private float rotation;
     private float scaler = 1;
 
-
-    public ToDraw(Bitmap texture, int x, int y, long currentMovementTime, long maxMovementTime, boolean selfDestroy, int bouncing, int speed, float rotation, float scaler) {
+    /**
+     * Contructor for a ToDraw. Note that you need to set xvec,yvec and rvec if you want your object to move!
+     *
+     * @param texture
+     * @param x
+     * @param y
+     * @param currentMovementTime
+     * @param maxMovementTime
+     * @param selfDestroy
+     * @param bouncing
+     * @param speed
+     * @param rotation
+     * @param scaler
+     */
+    public ToDraw(Bitmap texture, int x, int y, long currentMovementTime, long maxMovementTime, boolean selfDestroy, boolean bouncing, int speed, float rotation, float scaler) {
         this.texture = texture;
         this.manipulation = new Matrix();
         this.rotation = rotation;
@@ -51,6 +60,9 @@ public class ToDraw {
         this.scaler = scaler;
         manipulation.preScale(scaler, scaler);
     }
+    public ToDraw(Bitmap texture, int x, int y, long currentMovementTime,  boolean infiniteMoving, boolean selfDestroy, boolean bouncing, int speed, float rotation, float scaler) {
+        this(texture,x,y, currentMovementTime, Long.MAX_VALUE,selfDestroy,bouncing,speed,rotation,scaler);
+    }
 
     public ToDraw(ToDraw td) {
         this(td.getTexture(), td.getX(), td.getY(), td.getCurrentMovementTime(), td.getMaxMovementTime(), td.getSelfDestroy(), td.getBouncing(), td.getSpeed(), td.getRotation(), td.getScaler());
@@ -62,6 +74,15 @@ public class ToDraw {
 
     public float getRotation() {
         return rotation;
+    }
+
+    private static Lambda generateZeroLambda() {
+        return new Lambda() {
+            @Override
+            public int l(long x) {
+                return 0;
+            }
+        };
     }
 
     public void setRotation(float rotation) {
@@ -149,11 +170,11 @@ public class ToDraw {
         this.yVec = yVec;
     }
 
-    public int getBouncing() {
+    public boolean getBouncing() {
         return bouncing;
     }
 
-    public void setBouncing(int bouncing) {
+    public void setBouncing(boolean bouncing) {
         this.bouncing = bouncing;
     }
 

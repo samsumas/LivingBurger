@@ -99,6 +99,11 @@ public class MainActivity extends AppCompatActivity {
 
     //start settings activity
     public void startSettings(View view) {
-        startActivity(new Intent(this, SettingsActivity.class));
+        //startActivity(new Intent(this, SettingsActivity.class));
+        startConfigurator(view);
+    }
+
+    public void startConfigurator(View view) {
+        startActivity(new Intent(this, Configurator.class));
     }
 }

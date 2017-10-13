@@ -16,16 +16,19 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.net.Uri;
 import android.os.Handler;
+import android.os.ParcelFileDescriptor;
 import android.preference.PreferenceManager;
 import android.service.wallpaper.WallpaperService;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 
+import java.io.FileDescriptor;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Created by sami on 08/10/17.
@@ -48,6 +51,8 @@ public class JumpingBurger extends WallpaperService {
         private final int burgerTextureID = R.drawable.burger;
         private final int heartTextureID = R.drawable.heart;
         private final int pizzaTextureID = R.drawable.pizza;
+        private final boolean burgerIsJumping = true;
+        private final boolean pizzaIsJumping = false;
         private final int backgroundColor;
         private final int sleepBetweenRedraws = 35;
         private int burgerSpeed = 5;
@@ -119,61 +124,96 @@ public class JumpingBurger extends WallpaperService {
             p.setColor(Color.BLACK);
             p.setStyle(Paint.Style.FILL);
             time = System.currentTimeMillis();
-            spawnPizza();
-            Bitmap burgerTexture = BitmapFactory.decodeResource(getResources(), burgerTextureID);
-            for (int i = 0; i < burgerCount; i++) {
-                final int curr = i;
-                ToDraw temp = new ToDraw(burgerTexture, 0, 0, 0, burgerRunningTime, false, Integer.MAX_VALUE, burgerSpeed, 0, (float) Math.random() + 0.5F);
-                final int abc = i;
-                //you don't need x perfectly superposed burgers
-                temp.setxVec(new Lambda() {
-                    @Override
-                    public int l(long x) {
-                        return burgerCount - abc;
-                    }
-                });
-                temp.setyVec(new Lambda() {
-                    @Override
-                    public int l(long x) {
-                        return abc;
-                    }
-                });
-                temp.setrVec(new Lambda() {
-                    @Override
-                    public int l(long x) {
-                        return 1;
-                    }
-                });
-                objects.add(temp);
-            }
-            final Bitmap pizzaTexture = BitmapFactory.decodeResource(getResources(), pizzaTextureID);
-            for (int i = 0; i < pizzaCount; i++) {
-                ToDraw td = new ToDraw(pizzaTexture, 0, 0, 0, burgerRunningTime, true, 0, pizzaSpeed, 0, (float) Math.random() + 0.5F);
-                final int abc = i;
-                td.setxVec(new Lambda() {
-                    @Override
-                    public int l(long x) {
-                        return abc;
-                    }
-                });
-                td.setyVec(new Lambda() {
-                    @Override
-                    public int l(long x) {
-                        return pizzaCount - abc;
-                    }
-                });
-                objects.add(td);
-            }
+            //load all objects from config
+            loadConfig();
         }
 
         /**
-         * stopUsingBacjgroundImage
+         * stopUsingBackgroundImage
          */
         private void stopUsingBackgroundImage() {
             SharedPreferences.Editor editor = PreferenceManager.getDefaultSharedPreferences(JumpingBurger.this).edit();
             editor.putBoolean("pref_bg_color_or_bg_image", false);
             editor.apply();
             useBackgroundImage = false;
+        }
+
+        /**
+         * Good time to define how the config should be saved
+         * there is a "objects" key that contains a set with all the key with entries
+         * One Entry contains :
+         * /!\ example for accessing count : settings.getBoolean("nameofentry_count","");
+         *
+         * count (eg 5 to draw this object 5 times)
+         * isExternalResource
+         * image
+         * x
+         * y
+         * actualTime
+         * totalTime
+         * selfDestroy
+         * bouncing
+         * speed
+         * rotation
+         * scalingFactor
+         */
+        private void loadConfig() {
+            SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(JumpingBurger.this);
+            Set<String> objectNames = settings.getStringSet("objects", null);
+            if (objectNames == null) {
+                throw new IllegalStateException("Could not read config!");
+            }
+            for (String s : objectNames) {
+                Bitmap texture = loadImage(settings, s);
+                int count = Integer.parseInt(settings.getString(s + "_count", "1"));
+                int x = Integer.parseInt(settings.getString(s + "_x", "0"));
+                int y = Integer.parseInt(settings.getString(s + "_y", "0"));
+                long actualTime = Long.parseLong(settings.getString(s + "_actualTime", "0"));
+                long totalTime;
+                totalTime = Long.parseLong(settings.getString(s + "_totalTime", "0"));
+                if (totalTime < 0) {
+                    //totalTime = -1 is a synonym for infinity (easier to type then typing 99999999999999999999)
+                    totalTime = Long.MAX_VALUE;
+                }
+                boolean selfDestroy = Boolean.parseBoolean(settings.getString(s + "_selfDestroy", "false"));
+                boolean bouncing = Boolean.parseBoolean(settings.getString(s + "_bouncing", "false"));
+                int speed = Integer.parseInt(settings.getString(s + "_speed", "0"));
+                float rotation = Float.parseFloat(settings.getString(s + "_rotation", "0"));
+                float scalingFactor = Float.parseFloat(settings.getString(s + "_scalingFactor", "1"));
+                for (int i = 0; i < count; i++) {
+                    ToDraw td = new ToDraw(texture, x, y, actualTime, totalTime, selfDestroy, bouncing, speed, rotation, scalingFactor);
+                    objects.add(td);
+                }
+
+            }
+        }
+
+        private Bitmap loadImage(SharedPreferences settings, String s) {
+            Bitmap texture;
+            try {
+                //load externalResource
+                if (settings.getBoolean(s + "_isExternalResource", false)) {
+                    Uri file = Uri.parse(settings.getString(s + "_image", ""));
+                    texture = getBitmapFromUri(file);
+                } else {
+                    String id = settings.getString(s + "_image", null);
+                    texture = BitmapFactory.decodeResource(getResources(), Integer.parseInt(id));
+                }
+            } catch (Exception e) {
+                //when failling to load texture, use the burger one
+                texture = BitmapFactory.decodeResource(getResources(), burgerTextureID);
+                e.printStackTrace();
+            }
+            return texture;
+        }
+
+        private Bitmap getBitmapFromUri(Uri uri) throws IOException {
+            ParcelFileDescriptor parcelFileDescriptor =
+                    getContentResolver().openFileDescriptor(uri, "r");
+            FileDescriptor fileDescriptor = parcelFileDescriptor.getFileDescriptor();
+            Bitmap image = BitmapFactory.decodeFileDescriptor(fileDescriptor);
+            parcelFileDescriptor.close();
+            return image;
         }
 
         /**
@@ -204,9 +244,8 @@ public class JumpingBurger extends WallpaperService {
             td.setCurrentMovementTime(dt);
             float rotationBackup = td.getRotation();
             if (!isOnScreen(td)) {
-                if (td.getBouncing() > 0) {
+                if (td.getBouncing()) {
                     bounce(td);
-                    td.setBouncing(td.getBouncing() - 1);
                     //if off-screen (happens when you touch too much for a while), reset onScreen
                     if (td.getX() < 0) {
                         td.setX(0);
@@ -397,7 +436,7 @@ public class JumpingBurger extends WallpaperService {
          */
         private void spawnPizza(int i) {
             Bitmap pizzaTexture = BitmapFactory.decodeResource(getResources(), pizzaTextureID);
-            objects.add(new ToDraw(pizzaTexture, 0, 0, 0, burgerRunningTime, true, 0, pizzaSpeed, 0, 1));
+            objects.add(new ToDraw(pizzaTexture, 0, 0, 0, burgerRunningTime, true, pizzaIsJumping, pizzaSpeed, 0, 1));
         }
 
         /**

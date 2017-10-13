@@ -9,6 +9,14 @@
     <string name="startPreview">Press the burger to start the preview!</string>
     <string name="title_activity_settings">Settings</string>
 
+    <!-- buttons for the configurator -->
+    <string name="Apply">Apply</string>
+    <string name="Reset">Reset</string>
+    <string name="Cancel">Cancel</string>
+    <string name="Export">Export</string>
+    <string name="Import">Import</string>
+
+
     <!-- Strings related to Settings -->
     <string name="burger_touch_behaviour">Afraid from humans?</string>
     <string name="pref_runAwayOn">Run away from tapping</string>

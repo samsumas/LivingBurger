@@ -143,7 +143,7 @@ public class JumpingBurger extends WallpaperService {
          * there is a "objects" key that contains a set with all the key with entries
          * One Entry contains :
          * /!\ example for accessing count : settings.getBoolean("nameofentry_count","");
-         *
+         * <p>
          * count (eg 5 to draw this object 5 times)
          * isExternalResource
          * image
@@ -182,7 +182,28 @@ public class JumpingBurger extends WallpaperService {
                 float scalingFactor = Float.parseFloat(settings.getString(s + "_scalingFactor", "1"));
                 for (int i = 0; i < count; i++) {
                     ToDraw td = new ToDraw(texture, x, y, actualTime, totalTime, selfDestroy, bouncing, speed, rotation, scalingFactor);
+                    final int abc = count;
+                    final int abc2 = i;
                     objects.add(td);
+                    td.setxVec(new Lambda() {
+                        @Override
+                        public int l(long x) {
+                            return abc-abc2;
+                        }
+                    });
+                    td.setyVec(new Lambda() {
+                        @Override
+                        public int l(long x) {
+                            return abc2;
+                        }
+                    });
+                    td.setrVec(new Lambda() {
+                        @Override
+                        public int l(long x) {
+                            return 1;
+                        }
+                    });
+
                 }
 
             }
@@ -192,7 +213,7 @@ public class JumpingBurger extends WallpaperService {
             Bitmap texture;
             try {
                 //load externalResource
-                if (settings.getBoolean(s + "_isExternalResource", false)) {
+                if (Boolean.parseBoolean(settings.getString(s + "_isExternalResource", "false"))) {
                     Uri file = Uri.parse(settings.getString(s + "_image", ""));
                     texture = getBitmapFromUri(file);
                 } else {

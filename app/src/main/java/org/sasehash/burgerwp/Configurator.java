@@ -6,19 +6,40 @@ package org.sasehash.burgerwp;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.Bundle;
+import android.os.ParcelFileDescriptor;
 import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
+import android.text.Editable;
+import android.text.TextWatcher;
+import android.text.style.URLSpan;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.HorizontalScrollView;
+import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
+import android.widget.Toast;
+import android.widget.ToggleButton;
 
+import java.io.FileDescriptor;
+import java.io.IOException;
+import java.net.URI;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
+
+import static java.lang.Integer.parseInt;
+import static org.sasehash.burgerwp.Type.BOOL;
+import static org.sasehash.burgerwp.Type.FLOAT;
+import static org.sasehash.burgerwp.Type.IMAGE;
+import static org.sasehash.burgerwp.Type.INT;
+import static org.sasehash.burgerwp.Type.LONG;
 
 /**
  * Created by sami on 13/10/17.
@@ -29,9 +50,9 @@ import java.util.Set;
  */
 
 public class Configurator extends AppCompatActivity {
-
     private TableLayout v;
     private SharedPreferences.Editor newSettings;
+    private static ArrayList<String> intentKeys = new ArrayList<>();
     private String[] prefvalues = new String[]{
             "count",
             "isExternalResource",
@@ -46,7 +67,22 @@ public class Configurator extends AppCompatActivity {
             "rotation",
             "scalingFactor"
     };
+    //prefvalues[i] has the type prefvaluesType[i]
+    private Type[] prefvaluesType = new Type[]{
+            INT, BOOL, IMAGE, INT, INT, LONG, LONG, BOOL, BOOL, INT, FLOAT, FLOAT
+    };
 
+    //the image requested
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (resultCode == RESULT_OK) {
+            String helper = intentKeys.get(requestCode);
+            intentKeys.remove(requestCode);
+            newSettings.putString(helper+"_image",data.getDataString());
+            newSettings.putString(helper+"_isExternalResource","true");
+        }
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -67,7 +103,7 @@ public class Configurator extends AppCompatActivity {
         superLayout.setOrientation(LinearLayout.VERTICAL);
         superLayout.addView(scroller);
         View buttons = new View(this);
-        buttons.inflate(this, R.layout.buttons, superLayout);
+        View.inflate(this, R.layout.buttons, superLayout);
         setContentView(superLayout);
     }
 
@@ -130,11 +166,13 @@ public class Configurator extends AppCompatActivity {
         addMe.add("burger");
         addMe.add("pizza");
         newSettings.putStringSet("objects", addMe);
-        for (int i = 1; i < prefvalues.length; i++) {
+        for (int i = 0; i < prefvalues.length; i++) {
             newSettings.putString("burger_" + prefvalues[i], burgerOptions[i]);
             newSettings.putString("pizza_" + prefvalues[i], pizzaOptions[i]);
         }
         newSettings.apply();
+        //restart activity
+        startActivity(new Intent(this, Configurator.class));
     }
 
     /**help :
@@ -160,13 +198,12 @@ public class Configurator extends AppCompatActivity {
      */
     private void addHeader(TableLayout v) {
         TableRow header = new TableRow(this);
-        String[] options = new String[]{
-                "Image", "x-Position", "y-Position", "actualTime(Default :0)", "TotalTime(Default :true)", "SelfDestroy(Default :false)",
-                "bouncing(Default :-1)", "speed(Default :5)", "rotation(Default :0)", "scalingTo(Default: 1.0)"
-        };
+        //TODO : repalce options with better names
+        String[] options = prefvalues;
         for (String s : options) {
             TextView tv = new TextView(this);
             tv.setText(s);
+            tv.setGravity(View.TEXT_ALIGNMENT_CENTER);
             header.addView(tv);
         }
         v.addView(header);
@@ -176,10 +213,64 @@ public class Configurator extends AppCompatActivity {
         addHeader(this.v);
     }
 
+    private TextWatcher generateEditTextListener(final String str, final int i) {
+        return new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                //don't do anything
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                //don't do anything
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                try {
+                    switch (prefvaluesType[i]) {
+                        case BOOL:
+                            Boolean.parseBoolean(s.toString());
+                            break;
+                        case FLOAT:
+                            Float.parseFloat(s.toString());
+                            break;
+                        case IMAGE:
+                            //TODO : check if value is valid
+                            break;
+                        case INT:
+                            parseInt(s.toString());
+                            break;
+                        case LONG:
+                            Long.parseLong(s.toString());
+                            break;
+                        default:
+                            throw new IllegalStateException("Maybe you forgot to implement something");
+                    }
+                } catch (Exception e) {
+                    Toast error = Toast.makeText(Configurator.this, "Incorrect value, must be " + prefvaluesType[i], Toast.LENGTH_SHORT);
+                    error.show();
+                    if (prefvaluesType[i] == BOOL) {
+                        s = Editable.Factory.getInstance().newEditable("false");
+                    } else {
+                        s = Editable.Factory.getInstance().newEditable("0");
+                    }
+                }
+                //put it in the editor
+                newSettings.putString(str + "_" + prefvalues[i], s.toString());
+            }
+        };
+    }
+
+
     private void createTable(TableLayout v) {
         addHeader(v);
         SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(this);
         Set<String> rows = settings.getStringSet("objects", null);
+        //a e s t h e t i c s
+        v.setPadding(5, 5, 5, 5);
+        v.setStretchAllColumns(true);
+        //
         if (rows == null) {
             resetConfig(v);
             rows = settings.getStringSet("objects", null);
@@ -187,16 +278,81 @@ public class Configurator extends AppCompatActivity {
                 throw new IllegalStateException("Settings not existing and generating new settings didn't work");
             }
         }
-
+        int intentCounterHelper = -1;
         for (String s : rows) {
+            final String helper = s;
             TableRow current = new TableRow(this);
+            current.setGravity(View.TEXT_ALIGNMENT_CENTER);
             //TODO : add image
-            for (String curr : prefvalues) {
+            for (int i = 0; i < prefvalues.length; i++) {
+                if (prefvaluesType[i] == BOOL) {
+                    ToggleButton tb = new ToggleButton(this);
+                    tb.setChecked(Boolean.parseBoolean(settings.getString(s + "_" + prefvalues[i], "false")));
+                    tb.setTextOff("False");
+                    tb.setTextOn("True");
+                    tb.addTextChangedListener(generateEditTextListener(prefvalues[i], i));
+                    current.addView(tb);
+                    continue;
+                }
+                if (prefvaluesType[i] == IMAGE) {
+                    ImageButton ib = new ImageButton(this);
+                    try {
+                        int id = Integer.parseInt(settings.getString(s + "_" + prefvalues[i], ""));
+                        ib.setImageBitmap(BitmapFactory.decodeResource(getResources(), id));
+                    } catch (Exception e) {
+                        //maybe it was an uri
+                        e.printStackTrace();
+                        try {
+                            ib.setImageBitmap(getBitmapFromUri(Uri.parse(settings.getString(s + "_" + prefvalues[i], ""))));
+                        } catch (Exception e2) {
+                            //ok use the burger
+                            e2.printStackTrace();
+                            ib.setImageBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.burger));
+                        }
+                    }
+                    ib.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+                            intent.setType("image/*");
+                            intentKeys.add(helper);
+                            startActivityForResult(intent, intentKeys.size() - 1);
+                        }
+                    });
+                    current.addView(ib);
+                    continue;
+                }
+                String curr = prefvalues[i];
                 EditText et = new EditText(this);
                 et.setText(settings.getString(s + "_" + curr, ""));
+                et.addTextChangedListener(generateEditTextListener(curr, i));
+                switch (prefvaluesType[i]) {
+                    case INT:
+                    case LONG:
+                        final int numbersOnly = 0x1002;
+                        et.setInputType(numbersOnly);
+                        break;
+                    case FLOAT:
+                        final int floatNumbersOnly = 0x2002;
+                        et.setInputType(floatNumbersOnly);
+                        break;
+                    case BOOL:
+                        break;
+                    case IMAGE:
+                        break;
+                }
                 current.addView(et);
             }
             v.addView(current);
         }
+    }
+
+    private Bitmap getBitmapFromUri(Uri uri) throws IOException {
+        ParcelFileDescriptor parcelFileDescriptor =
+                getContentResolver().openFileDescriptor(uri, "r");
+        FileDescriptor fileDescriptor = parcelFileDescriptor.getFileDescriptor();
+        Bitmap image = BitmapFactory.decodeFileDescriptor(fileDescriptor);
+        parcelFileDescriptor.close();
+        return image;
     }
 }

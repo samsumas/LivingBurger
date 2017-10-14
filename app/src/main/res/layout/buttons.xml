@@ -45,6 +45,7 @@
             android:id="@+id/button8"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:onClick="importChanges"
             android:text="@string/Import" />
 
         <Button

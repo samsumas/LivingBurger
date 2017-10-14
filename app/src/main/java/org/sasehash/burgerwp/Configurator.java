@@ -32,8 +32,10 @@ import java.io.File;
 import java.io.FileDescriptor;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Scanner;
 import java.util.Set;
 
 import static org.sasehash.burgerwp.Type.BOOL;
@@ -72,16 +74,21 @@ public class Configurator extends AppCompatActivity {
     private Type[] prefvaluesType = new Type[]{
             INT, BOOL, IMAGE, INT, INT, LONG, LONG, BOOL, BOOL, INT, FLOAT, FLOAT
     };
+    private final int importIntentID = 703;
 
     //the image requested
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (resultCode == RESULT_OK) {
-            String helper = intentKeys.get(requestCode);
-            intentKeys.remove(requestCode);
-            newSettings.putString(helper + "_image", data.getDataString());
-            newSettings.putString(helper + "_isExternalResource", "true");
+            if (importIntentID == requestCode) {
+                importChanges(data);
+            } else {
+                String helper = intentKeys.get(requestCode);
+                intentKeys.remove(requestCode);
+                newSettings.putString(helper + "_image", data.getDataString());
+                newSettings.putString(helper + "_isExternalResource", "true");
+            }
         }
     }
 
@@ -119,6 +126,48 @@ public class Configurator extends AppCompatActivity {
         cancelChanges(v);
     }
 
+    public void importChanges(Intent intent) {
+        //FIXME this doesn't work
+        try {
+            InputStream inputStream = getContentResolver().openInputStream(intent.getData());
+            if (inputStream ==null) {
+                throw new IllegalStateException("InputStream is Null!");
+            }
+            Scanner scanner = new Scanner(inputStream);
+            //delimiter : semicolons
+            scanner.useDelimiter(";");
+            newSettings.clear();
+            Set<String> keys = new HashSet<>();
+            while (scanner.hasNext()) {
+                String key = scanner.next();
+                keys.add(key);
+                System.err.append("key :"+key);
+                for (String curr : prefvalues) {
+                    String read = scanner.next();
+                    System.err.append("just got "+read);
+                    newSettings.putString(key + "_" + curr, read);
+                }
+            }
+            inputStream.close();
+            scanner.close();
+            //put the keys in the thingie
+            newSettings.putStringSet("objects", keys);
+            //reload activity
+            startActivity(new Intent(this, this.getClass()));
+        } catch (IOException e) {
+            e.printStackTrace();
+            Toast.makeText(this, "Could not read File!", Toast.LENGTH_SHORT).show();
+        }
+
+    }
+
+    public void importChanges(View v) {
+        //send out an Intent!
+        Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+        intent.setType("*/*");
+        startActivityForResult(intent, importIntentID);
+    }
+
     public void exportChanges(View v) {
         SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(this);
         Set<String> objectNames = settings.getStringSet("objects", null);
@@ -129,26 +178,22 @@ public class Configurator extends AppCompatActivity {
             throw new IllegalStateException("Could not read config!");
         }
         for (String s : objectNames) {
-            doubleAppend(output, settings.getString(s + "_count", "1"));
-            doubleAppend(output, settings.getString(s + "_x", "0"));
-            doubleAppend(output, settings.getString(s + "_y", "0"));
-            doubleAppend(output, settings.getString(s + "_actualTime", "0"));
-            doubleAppend(output, settings.getString(s + "_totalTime", "0"));
-            doubleAppend(output, settings.getString(s + "_selfDestroy", "false"));
-            doubleAppend(output, settings.getString(s + "_bouncing", "false"));
-            doubleAppend(output, settings.getString(s + "_speed", "0"));
-            doubleAppend(output, settings.getString(s + "_rotation", "0"));
-            doubleAppend(output, settings.getString(s + "_scalingFactor", "1"));
+            doubleAppend(output, s);
+            for (String curr: prefvalues) {
+                doubleAppend(output, settings.getString(s+"_"+curr,"0"));
+            }
             output.append('\n');
         }
         //TODO:ask the user for a destination
         String timeStamp = new java.util.Date().toString();
-        String fileName = "customConfigLivingBurger" + timeStamp +".csv";
+        String fileName = "customConfigLivingBurger" + timeStamp + ".csv";
+        fileName = fileName.replace(':', '.');
         File exportDestination = new File(Environment.getExternalStoragePublicDirectory(
                 Environment.DIRECTORY_DOWNLOADS), fileName);
         try {
             FileWriter writer = new FileWriter(exportDestination);
             writer.write(output.toString());
+            writer.close();
             Toast.makeText(this, "Wrote File to " + exportDestination.getAbsolutePath(), Toast.LENGTH_SHORT).show();
         } catch (IOException e) {
             Toast.makeText(this, "Error while writing File to " + exportDestination.getAbsolutePath(), Toast.LENGTH_SHORT).show();

@@ -54,9 +54,9 @@ import static org.sasehash.burgerwp.Type.LONG;
 
 public class Configurator extends AppCompatActivity {
     private TableLayout v;
-    private SharedPreferences.Editor newSettings;
+    private static SharedPreferences.Editor newSettings;
     private static ArrayList<String> intentKeys = new ArrayList<>();
-    private String[] prefvalues = new String[]{
+    public static String[] prefvalues = new String[]{
             "count",
             "isExternalResource",
             "image",
@@ -71,7 +71,7 @@ public class Configurator extends AppCompatActivity {
             "scalingFactor"
     };
     //prefvalues[i] has the type prefvaluesType[i]
-    private Type[] prefvaluesType = new Type[]{
+    public static Type[] prefvaluesType = new Type[]{
             INT, BOOL, IMAGE, INT, INT, LONG, LONG, BOOL, BOOL, INT, FLOAT, FLOAT
     };
     private final int importIntentID = 703;
@@ -110,7 +110,6 @@ public class Configurator extends AppCompatActivity {
         LinearLayout superLayout = new LinearLayout(this);
         superLayout.setOrientation(LinearLayout.VERTICAL);
         superLayout.addView(scroller);
-        View buttons = new View(this);
         View.inflate(this, R.layout.buttons, superLayout);
         setContentView(superLayout);
     }
@@ -127,38 +126,44 @@ public class Configurator extends AppCompatActivity {
     }
 
     public void importChanges(Intent intent) {
-        //FIXME this doesn't work
         try {
             InputStream inputStream = getContentResolver().openInputStream(intent.getData());
-            if (inputStream ==null) {
+            if (inputStream == null) {
                 throw new IllegalStateException("InputStream is Null!");
             }
-            Scanner scanner = new Scanner(inputStream);
-            //delimiter : semicolons
-            scanner.useDelimiter(";");
+            Scanner lineScanner = new Scanner(inputStream);
+            //lineScanner.useDelimiter("\n");
             newSettings.clear();
             Set<String> keys = new HashSet<>();
-            while (scanner.hasNext()) {
+            if (!lineScanner.hasNextLine()) {
+                throw new IllegalStateException("CANNOT READ FILE!");
+            }
+            while (lineScanner.hasNextLine()) {
+                String currLine = lineScanner.nextLine();
+                Scanner scanner = new Scanner(currLine);
+                scanner.useDelimiter(";");
                 String key = scanner.next();
                 keys.add(key);
-                System.err.append("key :"+key);
+                System.out.append("key :" + key);
                 for (String curr : prefvalues) {
                     String read = scanner.next();
-                    System.err.append("just got "+read);
+                    System.out.append("just got " + read);
                     newSettings.putString(key + "_" + curr, read);
                 }
+                //ignore the rest
+                scanner.close();
             }
-            inputStream.close();
-            scanner.close();
             //put the keys in the thingie
             newSettings.putStringSet("objects", keys);
+            newSettings.apply();
+            lineScanner.close();
+            inputStream.close();
             //reload activity
             startActivity(new Intent(this, this.getClass()));
         } catch (IOException e) {
             e.printStackTrace();
             Toast.makeText(this, "Could not read File!", Toast.LENGTH_SHORT).show();
         }
-
     }
 
     public void importChanges(View v) {
@@ -179,8 +184,8 @@ public class Configurator extends AppCompatActivity {
         }
         for (String s : objectNames) {
             doubleAppend(output, s);
-            for (String curr: prefvalues) {
-                doubleAppend(output, settings.getString(s+"_"+curr,"0"));
+            for (String curr : prefvalues) {
+                doubleAppend(output, settings.getString(s + "_" + curr, "0"));
             }
             output.append('\n');
         }
@@ -190,6 +195,7 @@ public class Configurator extends AppCompatActivity {
         fileName = fileName.replace(':', '.');
         File exportDestination = new File(Environment.getExternalStoragePublicDirectory(
                 Environment.DIRECTORY_DOWNLOADS), fileName);
+        System.out.append(output);
         try {
             FileWriter writer = new FileWriter(exportDestination);
             writer.write(output.toString());
@@ -335,27 +341,24 @@ public class Configurator extends AppCompatActivity {
         return new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-                //don't do anything
             }
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-                //don't do anything
+                newSettings.putString(str + "_" + prefvalues[i], s.toString());
             }
 
             @Override
             public void afterTextChanged(Editable s) {
                 String checkedValue = null;
+                //put it in the editor
                 try {
                     switch (prefvaluesType[i]) {
-                        case BOOL:
-                            //bools doesn't use this method
-                            break;
                         case FLOAT:
                             checkedValue = Float.toString(Float.parseFloat(s.toString()));
                             break;
                         case IMAGE:
-                            //TODO : check if value is valid
+                            //can be ignored here
                             break;
                         case INT:
                             checkedValue = Integer.toString(Integer.parseInt(s.toString()));
@@ -363,27 +366,22 @@ public class Configurator extends AppCompatActivity {
                         case LONG:
                             checkedValue = Long.toString(Long.parseLong(s.toString()));
                             break;
+                        case BOOL:
+                            //bools doesn't use this method
                         default:
                             throw new IllegalStateException("Maybe you forgot to implement something");
                     }
-                } catch (Exception e) {
-                    Toast error = Toast.makeText(Configurator.this, "Incorrect value, must be " + prefvaluesType[i], Toast.LENGTH_SHORT);
-                    error.show();
-                    //bools doesn't use this method!
-                    s = Editable.Factory.getInstance().newEditable("0");
-
-                    return;
-                }
-                //put it in the editor
-                if (checkedValue != null) {
-                    newSettings.putString(str + "_" + prefvalues[i], checkedValue);
-                } else {
-                    newSettings.putString(str + "_" + prefvalues[i], s.toString());
+                    if (checkedValue == null) {
+                        throw new IllegalStateException("this listener is broken!");
+                    }
+                } catch (NumberFormatException e) {
+                    Toast.makeText(Configurator.this, "Incorrect value, must be " + prefvaluesType[i], Toast.LENGTH_SHORT).show();
+                    s = Editable.Factory.getInstance()
+                            .newEditable(PreferenceManager.getDefaultSharedPreferences(Configurator.this).getString(str + "_" + prefvalues[i], "0"));
                 }
             }
         };
     }
-
 
     private void createTable(TableLayout v) {
         addHeader(v);
@@ -404,7 +402,6 @@ public class Configurator extends AppCompatActivity {
         for (String s : rows) {
             final String helper = s;
             TableRow current = new TableRow(this);
-            current.setGravity(View.TEXT_ALIGNMENT_CENTER);
             for (int i = 0; i < prefvalues.length; i++) {
                 if (prefvaluesType[i] == BOOL) {
                     Switch tb = new Switch(this);
@@ -441,10 +438,9 @@ public class Configurator extends AppCompatActivity {
                     current.addView(ib);
                     continue;
                 }
-                String curr = prefvalues[i];
                 EditText et = new EditText(this);
-                et.setText(settings.getString(s + "_" + curr, ""));
-                et.addTextChangedListener(generateEditTextListener(curr, i));
+                et.setText(settings.getString(s + "_" + prefvalues[i], ""));
+                et.addTextChangedListener(generateEditTextListener(s, i));
                 switch (prefvaluesType[i]) {
                     case INT:
                     case LONG:

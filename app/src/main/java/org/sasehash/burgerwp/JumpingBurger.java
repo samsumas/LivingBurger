@@ -8,6 +8,7 @@
 
 package org.sasehash.burgerwp;
 
+import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -158,7 +159,7 @@ public class JumpingBurger extends WallpaperService {
          * scalingFactor
          */
         /**
-         * Loads config from sharedpreferences into the engine.
+         * Loads config from sharedpreferences into the engine. Please use loadConfig(Context c)
          */
         private void loadConfig() {
             SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(JumpingBurger.this);
@@ -167,6 +168,7 @@ public class JumpingBurger extends WallpaperService {
                 throw new IllegalStateException("Could not read config!");
             }
             for (String s : objectNames) {
+                //TODO: make a for loop iterating over currentConfig and setting the values right
                 Bitmap texture = loadImage(settings, s);
                 int count = Integer.parseInt(settings.getString(s + "_count", "1"));
 
@@ -212,7 +214,6 @@ public class JumpingBurger extends WallpaperService {
             }
         }
 
-
         private Bitmap loadImage(SharedPreferences settings, String s) {
             Bitmap texture;
             try {
@@ -232,7 +233,7 @@ public class JumpingBurger extends WallpaperService {
             return texture;
         }
 
-        private Bitmap getBitmapFromUri(Uri uri) throws IOException {
+        public Bitmap getBitmapFromUri(Uri uri) throws IOException {
             ParcelFileDescriptor parcelFileDescriptor =
                     getContentResolver().openFileDescriptor(uri, "r");
             FileDescriptor fileDescriptor = parcelFileDescriptor.getFileDescriptor();
@@ -240,6 +241,7 @@ public class JumpingBurger extends WallpaperService {
             parcelFileDescriptor.close();
             return image;
         }
+
 
         /**
          * checkValue

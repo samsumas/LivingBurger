@@ -56,6 +56,7 @@ public class Configurator extends AppCompatActivity {
     private TableLayout v;
     private static SharedPreferences.Editor newSettings;
     private static ArrayList<String> intentKeys = new ArrayList<>();
+
     public static String[] prefvalues = new String[]{
             "count",
             "isExternalResource",
@@ -68,12 +69,16 @@ public class Configurator extends AppCompatActivity {
             "bouncing",
             "speed",
             "rotation",
-            "scalingFactor"
+            "scalingFactor",
+            "runsaway",
     };
     //prefvalues[i] has the type prefvaluesType[i]
     public static Type[] prefvaluesType = new Type[]{
-            INT, BOOL, IMAGE, INT, INT, LONG, LONG, BOOL, BOOL, INT, FLOAT, FLOAT
+            INT, BOOL, IMAGE, INT, INT, LONG, LONG, BOOL, BOOL, INT, FLOAT, FLOAT, BOOL,
     };
+    //try to use the Setting class
+    public static Setting currentConfig = new Setting(prefvalues, prefvaluesType);
+
     private final int importIntentID = 703;
 
     //the image requested
@@ -144,11 +149,9 @@ public class Configurator extends AppCompatActivity {
                 scanner.useDelimiter(";");
                 String key = scanner.next();
                 keys.add(key);
-                System.out.append("key :" + key);
-                for (String curr : prefvalues) {
+                for (int i = 0; i < currentConfig.size(); i++) {
                     String read = scanner.next();
-                    System.out.append("just got " + read);
-                    newSettings.putString(key + "_" + curr, read);
+                    newSettings.putString(generateCompleteKey(key, i), read);
                 }
                 //ignore the rest
                 scanner.close();
@@ -184,8 +187,8 @@ public class Configurator extends AppCompatActivity {
         }
         for (String s : objectNames) {
             doubleAppend(output, s);
-            for (String curr : prefvalues) {
-                doubleAppend(output, settings.getString(s + "_" + curr, "0"));
+            for (int i = 0; i < currentConfig.size(); i++) {
+                doubleAppend(output, settings.getString(generateCompleteKey(s, i), "0"));
             }
             output.append('\n');
         }
@@ -264,8 +267,8 @@ public class Configurator extends AppCompatActivity {
         //delete old preference
         if (deleteMe != null) {
             for (String s : deleteMe) {
-                for (String curr : prefvalues) {
-                    newSettings.remove(s + "_" + curr);
+                for (int i = 0; i < currentConfig.size(); i++) {
+                    newSettings.remove(generateCompleteKey(s, i));
                 }
             }
         }
@@ -281,9 +284,9 @@ public class Configurator extends AppCompatActivity {
         addMe.add("burger");
         addMe.add("pizza");
         newSettings.putStringSet("objects", addMe);
-        for (int i = 0; i < prefvalues.length; i++) {
-            newSettings.putString("burger_" + prefvalues[i], burgerOptions[i]);
-            newSettings.putString("pizza_" + prefvalues[i], pizzaOptions[i]);
+        for (int i = 0; i < currentConfig.size(); i++) {
+            newSettings.putString("burger_" + currentConfig.getNames().get(i), burgerOptions[i]);
+            newSettings.putString("pizza_" + currentConfig.getNames().get(i), pizzaOptions[i]);
         }
         newSettings.apply();
         //restart activity
@@ -313,12 +316,10 @@ public class Configurator extends AppCompatActivity {
      */
     private void addHeader(TableLayout v) {
         TableRow header = new TableRow(this);
-        //TODO : repalce options with better names
-        String[] options = prefvalues;
-        for (String s : options) {
+        //TODO : replace options with better names
+        for (String s : currentConfig.getNames()) {
             TextView tv = new TextView(this);
             tv.setText(s);
-            tv.setGravity(View.TEXT_ALIGNMENT_CENTER);
             header.addView(tv);
         }
         v.addView(header);
@@ -332,12 +333,14 @@ public class Configurator extends AppCompatActivity {
         return new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                newSettings.putString(s + "_" + prefvalues[i], Boolean.toString(isChecked));
+                newSettings.putString(generateCompleteKey(s, i), Boolean.toString(isChecked));
             }
         };
     }
 
-    private TextWatcher generateEditTextListener(final String str, final int i) {
+    private TextWatcher generateEditTextListener(final String key, int i) {
+        final String name = currentConfig.getNames().get(i);
+        final Type type = currentConfig.getTypes().get(i);
         return new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
@@ -345,7 +348,7 @@ public class Configurator extends AppCompatActivity {
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-                newSettings.putString(str + "_" + prefvalues[i], s.toString());
+                newSettings.putString(key + "_" + name, s.toString());
             }
 
             @Override
@@ -353,7 +356,7 @@ public class Configurator extends AppCompatActivity {
                 String checkedValue = null;
                 //put it in the editor
                 try {
-                    switch (prefvaluesType[i]) {
+                    switch (type) {
                         case FLOAT:
                             checkedValue = Float.toString(Float.parseFloat(s.toString()));
                             break;
@@ -375,12 +378,18 @@ public class Configurator extends AppCompatActivity {
                         throw new IllegalStateException("this listener is broken!");
                     }
                 } catch (NumberFormatException e) {
-                    Toast.makeText(Configurator.this, "Incorrect value, must be " + prefvaluesType[i], Toast.LENGTH_SHORT).show();
+                    Toast.makeText(Configurator.this, "Incorrect value, must be " + type, Toast.LENGTH_SHORT).show();
                     s = Editable.Factory.getInstance()
-                            .newEditable(PreferenceManager.getDefaultSharedPreferences(Configurator.this).getString(str + "_" + prefvalues[i], "0"));
+                            .newEditable(PreferenceManager
+                                    .getDefaultSharedPreferences(Configurator.this)
+                                    .getString(key + "_" + name, "0"));
                 }
             }
         };
+    }
+
+    private String generateCompleteKey(String objectKey, int i) {
+        return objectKey + "_" + currentConfig.getNames().get(i);
     }
 
     private void createTable(TableLayout v) {
@@ -402,28 +411,37 @@ public class Configurator extends AppCompatActivity {
         for (String s : rows) {
             final String helper = s;
             TableRow current = new TableRow(this);
-            for (int i = 0; i < prefvalues.length; i++) {
-                if (prefvaluesType[i] == BOOL) {
+            for (int i = 0; i < currentConfig.size(); i++) {
+                Type type = currentConfig.getTypes().get(i);
+                if (type == BOOL) {
                     Switch tb = new Switch(this);
-                    tb.setChecked(Boolean.parseBoolean(settings.getString(s + "_" + prefvalues[i], "false")));
+                    tb.setChecked(Boolean.parseBoolean(settings.getString(
+                            generateCompleteKey(s, i), "false"
+                    )));
                     tb.setOnCheckedChangeListener(generateToggleButtonListener(s, i));
                     current.addView(tb);
                     continue;
                 }
-                if (prefvaluesType[i] == IMAGE) {
+                if (type == IMAGE) {
                     ImageButton ib = new ImageButton(this);
                     try {
-                        int id = Integer.parseInt(settings.getString(s + "_" + prefvalues[i], ""));
+                        int id = Integer.parseInt(settings.getString(
+                                generateCompleteKey(s, i), "")
+                        );
                         ib.setImageBitmap(BitmapFactory.decodeResource(getResources(), id));
                     } catch (Exception e) {
                         //maybe it was an uri
                         e.printStackTrace();
                         try {
-                            ib.setImageBitmap(getBitmapFromUri(Uri.parse(settings.getString(s + "_" + prefvalues[i], ""))));
+                            ib.setImageBitmap(getBitmapFromUri(Uri.parse(
+                                    settings.getString(generateCompleteKey(s, i), ""))
+                            ));
                         } catch (Exception e2) {
                             //ok use the burger
                             e2.printStackTrace();
-                            ib.setImageBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.burger));
+                            ib.setImageBitmap(BitmapFactory.decodeResource(
+                                    getResources(), R.drawable.burger
+                            ));
                         }
                     }
                     ib.setOnClickListener(new View.OnClickListener() {
@@ -439,9 +457,9 @@ public class Configurator extends AppCompatActivity {
                     continue;
                 }
                 EditText et = new EditText(this);
-                et.setText(settings.getString(s + "_" + prefvalues[i], ""));
+                et.setText(settings.getString(generateCompleteKey(s, i), ""));
                 et.addTextChangedListener(generateEditTextListener(s, i));
-                switch (prefvaluesType[i]) {
+                switch (type) {
                     case INT:
                     case LONG:
                         final int numbersOnly = 0x1002;
@@ -451,10 +469,10 @@ public class Configurator extends AppCompatActivity {
                         final int floatNumbersOnly = 0x2002;
                         et.setInputType(floatNumbersOnly);
                         break;
-                    case BOOL:
-                        break;
-                    case IMAGE:
-                        break;
+                    default:
+                        throw new IllegalStateException(
+                                "This should never happen, did you add something in configuration?"
+                        );
                 }
                 current.addView(et);
             }

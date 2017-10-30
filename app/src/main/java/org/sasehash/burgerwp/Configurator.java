@@ -4,6 +4,7 @@
 
 package org.sasehash.burgerwp;
 
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
@@ -252,20 +253,25 @@ public class Configurator extends AppCompatActivity {
      * rotation
      * scalingFactor
      */
+    public void resetConfig(View v) {
+        resetConfig(v,this, newSettings);
+        //restart activity
+        startActivity(new Intent(this, Configurator.class));
+    }
     /**
      * the authentic wallpaper
      *
      * @param v
      */
-    public void resetConfig(View v) {
-        SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(this);
+    public static void resetConfig(View v, Context c, SharedPreferences.Editor edit) {
+        SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(c);
         Set<String> deleteMe = settings.getStringSet("objects", null);
 
         //delete old preference
         if (deleteMe != null) {
             for (String s : deleteMe) {
                 for (String curr : prefvalues) {
-                    newSettings.remove(s + "_" + curr);
+                    edit.remove(s + "_" + curr);
                 }
             }
         }
@@ -280,14 +286,12 @@ public class Configurator extends AppCompatActivity {
         Set<String> addMe = new HashSet<String>();
         addMe.add("burger");
         addMe.add("pizza");
-        newSettings.putStringSet("objects", addMe);
+        edit.putStringSet("objects", addMe);
         for (int i = 0; i < prefvalues.length; i++) {
-            newSettings.putString("burger_" + prefvalues[i], burgerOptions[i]);
-            newSettings.putString("pizza_" + prefvalues[i], pizzaOptions[i]);
+            edit.putString("burger_" + prefvalues[i], burgerOptions[i]);
+            edit.putString("pizza_" + prefvalues[i], pizzaOptions[i]);
         }
-        newSettings.apply();
-        //restart activity
-        startActivity(new Intent(this, Configurator.class));
+        edit.apply();
     }
 
     /**help :

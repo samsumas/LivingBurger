@@ -164,7 +164,8 @@ public class JumpingBurger extends WallpaperService {
             SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(JumpingBurger.this);
             Set<String> objectNames = settings.getStringSet("objects", null);
             if (objectNames == null) {
-                throw new IllegalStateException("Could not read config!");
+                Configurator.resetConfig(null, JumpingBurger.this, settings.edit());
+                objectNames = settings.getStringSet("objects", null);
             }
             for (String s : objectNames) {
                 Bitmap texture = loadImage(settings, s);

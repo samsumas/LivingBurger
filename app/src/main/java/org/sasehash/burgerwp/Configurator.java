@@ -18,11 +18,14 @@ import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.HorizontalScrollView;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
+import android.widget.Spinner;
 import android.widget.Switch;
 import android.widget.TableLayout;
 import android.widget.TableRow;
@@ -57,6 +60,10 @@ public class Configurator extends AppCompatActivity {
     private TableLayout v;
     private static SharedPreferences.Editor newSettings;
     private static ArrayList<String> intentKeys = new ArrayList<>();
+    public final static String[] preconfigurated = new String[] {
+            "standard",
+            "christmas",
+    };
     public static String[] prefvalues = new String[]{
             "count",
             "isExternalResource",
@@ -69,11 +76,12 @@ public class Configurator extends AppCompatActivity {
             "bouncing",
             "speed",
             "rotation",
-            "scalingFactor"
+            "scalingFactor",
+            "runsAway"
     };
     //prefvalues[i] has the type prefvaluesType[i]
     public static Type[] prefvaluesType = new Type[]{
-            INT, BOOL, IMAGE, INT, INT, LONG, LONG, BOOL, BOOL, INT, FLOAT, FLOAT
+            INT, BOOL, IMAGE, INT, INT, LONG, LONG, BOOL, BOOL, INT, FLOAT, FLOAT, BOOL
     };
     private final int importIntentID = 703;
 
@@ -102,6 +110,8 @@ public class Configurator extends AppCompatActivity {
         // |--scrolling settingpanel
         // |     |--table with settings
         // |--Buttons (in a Row) (apply reset default, export, import, add a row, remove a row etc...)
+
+
         HorizontalScrollView scroller = new HorizontalScrollView(this);
         v = new TableLayout(this);
         scroller.addView(v);
@@ -253,17 +263,20 @@ public class Configurator extends AppCompatActivity {
      * rotation
      * scalingFactor
      */
-    public void resetConfig(View v) {
-        resetConfig(v,this, newSettings);
+    public void resetConfig() {
+        resetConfig(this, newSettings);
         //restart activity
         startActivity(new Intent(this, Configurator.class));
     }
-    /**
-     * the authentic wallpaper
-     *
-     * @param v
-     */
-    public static void resetConfig(View v, Context c, SharedPreferences.Editor edit) {
+
+
+    private void loadChristmasConfig() {
+        loadChristmasConfig(this,newSettings);
+        //restart activity
+        startActivity(new Intent(this, Configurator.class));
+    }
+
+    private void loadChristmasConfig(Context c, SharedPreferences.Editor edit) {
         SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(c);
         Set<String> deleteMe = settings.getStringSet("objects", null);
 
@@ -278,10 +291,44 @@ public class Configurator extends AppCompatActivity {
 
         //set new Preferences
         String[] burgerOptions = new String[]{
-                "20", "false", Integer.toString(R.drawable.burger), "0", "0", "0", "-1", "false", "true", "5", "0", "1.0"
+                "20", "false", Integer.toString(R.drawable.noel), "0", "0", "0", "-1", "false", "true", "5", "0", "1.0", "true"
         };
         String[] pizzaOptions = new String[]{
-                "20", "false", Integer.toString(R.drawable.pizza), "0", "0", "0", "-1", "false", "false", "5", "180", "1.0"
+                "20", "false", Integer.toString(R.drawable.pizza), "0", "0", "0", "-1", "false", "false", "5", "180", "1.0", "true"
+        };
+        Set<String> addMe = new HashSet<String>();
+        addMe.add("burger");
+        addMe.add("pizza");
+        edit.putStringSet("objects", addMe);
+        for (int i = 0; i < prefvalues.length; i++) {
+            edit.putString("burger_" + prefvalues[i], burgerOptions[i]);
+            edit.putString("pizza_" + prefvalues[i], pizzaOptions[i]);
+        }
+        edit.apply();
+    }
+    /**
+     * the authentic wallpaper
+     *
+     */
+    public static void resetConfig(Context c, SharedPreferences.Editor edit) {
+        SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(c);
+        Set<String> deleteMe = settings.getStringSet("objects", null);
+
+        //delete old preference
+        if (deleteMe != null) {
+            for (String s : deleteMe) {
+                for (String curr : prefvalues) {
+                    edit.remove(s + "_" + curr);
+                }
+            }
+        }
+
+        //set new Preferences
+        String[] burgerOptions = new String[]{
+                "20", "false", Integer.toString(R.drawable.burger), "0", "0", "0", "-1", "false", "true", "5", "0", "1.0", "true"
+        };
+        String[] pizzaOptions = new String[]{
+                "20", "false", Integer.toString(R.drawable.pizza), "0", "0", "0", "-1", "false", "false", "5", "180", "1.0", "true"
         };
         Set<String> addMe = new HashSet<String>();
         addMe.add("burger");
@@ -387,7 +434,39 @@ public class Configurator extends AppCompatActivity {
         };
     }
 
+
     private void createTable(TableLayout v) {
+        ArrayAdapter<String> preconfigs = new ArrayAdapter<String>(this, R.layout.selector, preconfigurated);
+        Spinner preconfigSelector = new Spinner(this);
+        preconfigSelector.setAdapter(preconfigs);
+        preconfigSelector.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            private boolean first = true;
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                if (first) {
+                    first= false;
+                } else {
+                    //sorry didn't find anything beautifuler
+                    if (parent.getItemAtPosition(position).equals(preconfigurated[0])) {
+                        resetConfig();
+                    } else {
+                        if (parent.getItemAtPosition(position).equals(preconfigurated[1])) {
+                            loadChristmasConfig();
+                        } else {
+                            throw new IllegalStateException("Not implemented!");
+                        }
+                    }
+                }
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+
+            }
+        });
+
+        v.addView(preconfigSelector);
+
         addHeader(v);
         SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(this);
         Set<String> rows = settings.getStringSet("objects", null);
@@ -396,7 +475,7 @@ public class Configurator extends AppCompatActivity {
         v.setStretchAllColumns(true);
         //
         if (rows == null) {
-            resetConfig(v);
+            resetConfig();
             rows = settings.getStringSet("objects", null);
             if (rows == null) {
                 throw new IllegalStateException("Settings not existing and generating new settings didn't work");

@@ -29,6 +29,7 @@ public class ToDraw {
     private int x, y;
     private float rotation;
     private float scaler = 1;
+    private boolean runsAway= true;
 
     /**
      * Contructor for a ToDraw. Note that you need to set xvec,yvec and rvec if you want your object to move!
@@ -44,10 +45,11 @@ public class ToDraw {
      * @param rotation
      * @param scaler
      */
-    public ToDraw(Bitmap texture, int x, int y, long currentMovementTime, long maxMovementTime, boolean selfDestroy, boolean bouncing, int speed, float rotation, float scaler) {
+    public ToDraw(Bitmap texture, int x, int y, long currentMovementTime, long maxMovementTime, boolean selfDestroy, boolean bouncing, int speed, float rotation, float scaler, boolean runsAway) {
         this.texture = texture;
         this.manipulation = new Matrix();
         this.rotation = rotation;
+        this.runsAway = runsAway;
         this.addTo(rotation);
         this.x = x;
         this.y = y;
@@ -60,12 +62,20 @@ public class ToDraw {
         this.scaler = scaler;
         manipulation.preScale(scaler, scaler);
     }
-    public ToDraw(Bitmap texture, int x, int y, long currentMovementTime,  boolean infiniteMoving, boolean selfDestroy, boolean bouncing, int speed, float rotation, float scaler) {
-        this(texture,x,y, currentMovementTime, Long.MAX_VALUE,selfDestroy,bouncing,speed,rotation,scaler);
+    public ToDraw(Bitmap texture, int x, int y, long currentMovementTime,  boolean infiniteMoving, boolean selfDestroy, boolean bouncing, int speed, float rotation, float scaler,  boolean runsAway) {
+        this(texture,x,y, currentMovementTime, Long.MAX_VALUE,selfDestroy,bouncing,speed,rotation,scaler, runsAway);
     }
 
     public ToDraw(ToDraw td) {
-        this(td.getTexture(), td.getX(), td.getY(), td.getCurrentMovementTime(), td.getMaxMovementTime(), td.getSelfDestroy(), td.getBouncing(), td.getSpeed(), td.getRotation(), td.getScaler());
+        this(td.getTexture(), td.getX(), td.getY(), td.getCurrentMovementTime(), td.getMaxMovementTime(), td.getSelfDestroy(), td.getBouncing(), td.getSpeed(), td.getRotation(), td.getScaler(), td.isRunsAway());
+    }
+
+    public boolean isRunsAway() {
+        return runsAway;
+    }
+
+    public void setRunsAway(boolean runsAway) {
+        this.runsAway = runsAway;
     }
 
     public Matrix getManipulation() {

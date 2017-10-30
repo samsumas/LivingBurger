@@ -164,7 +164,7 @@ public class JumpingBurger extends WallpaperService {
             SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(JumpingBurger.this);
             Set<String> objectNames = settings.getStringSet("objects", null);
             if (objectNames == null) {
-                Configurator.resetConfig(null, JumpingBurger.this, settings.edit());
+                Configurator.resetConfig(JumpingBurger.this, settings.edit());
                 objectNames = settings.getStringSet("objects", null);
             }
             for (String s : objectNames) {
@@ -185,9 +185,10 @@ public class JumpingBurger extends WallpaperService {
                 int speed = Integer.parseInt(settings.getString(s + "_speed", "0"));
                 float rotation = Float.parseFloat(settings.getString(s + "_rotation", "0"));
                 float scalingFactor = Float.parseFloat(settings.getString(s + "_scalingFactor", "1"));
+                boolean runsAway = Boolean.parseBoolean(settings.getString(s + "_runsAway", "true"));
                 String c = ";";
                 for (int i = 0; i < count; i++) {
-                    ToDraw td = new ToDraw(texture, x, y, actualTime, totalTime, selfDestroy, bouncing, speed, rotation, scalingFactor);
+                    ToDraw td = new ToDraw(texture, x, y, actualTime, totalTime, selfDestroy, bouncing, speed, rotation, scalingFactor, runsAway);
                     final int abc = count;
                     final int abc2 = i;
                     objects.add(td);
@@ -462,7 +463,7 @@ public class JumpingBurger extends WallpaperService {
          */
         private void spawnPizza(int i) {
             Bitmap pizzaTexture = BitmapFactory.decodeResource(getResources(), pizzaTextureID);
-            objects.add(new ToDraw(pizzaTexture, 0, 0, 0, burgerRunningTime, true, pizzaIsJumping, pizzaSpeed, 0, 1));
+            objects.add(new ToDraw(pizzaTexture, 0, 0, 0, burgerRunningTime, true, pizzaIsJumping, pizzaSpeed, 0, 1, true ));
         }
 
         /**
@@ -586,7 +587,7 @@ public class JumpingBurger extends WallpaperService {
             vecX *= td.getSpeed();
             double vecY = ((double) dy) / size;
             vecY *= td.getSpeed();
-            if (!runAway) {
+            if (!td.isRunsAway()) {
                 vecX = -vecX;
                 vecY = -vecY;
             }

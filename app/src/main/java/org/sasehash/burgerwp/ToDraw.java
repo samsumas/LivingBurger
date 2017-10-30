@@ -50,10 +50,10 @@ public class ToDraw {
         this.manipulation = new Matrix();
         this.rotation = rotation;
         this.runsAway = runsAway;
-        this.addTo(rotation);
         this.x = x;
         this.y = y;
-        manipulation.setTranslate(x, y);
+        manipulation.preRotate(rotation,getMiddleX(),getMiddleY());
+        manipulation.postTranslate(x, y);
         this.currentMovementTime = currentMovementTime;
         this.maxMovementTime = maxMovementTime;
         this.selfDestroy = selfDestroy;

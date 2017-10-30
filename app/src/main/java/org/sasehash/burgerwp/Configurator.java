@@ -14,6 +14,7 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.ParcelFileDescriptor;
 import android.preference.PreferenceManager;
+import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -25,6 +26,8 @@ import android.widget.EditText;
 import android.widget.HorizontalScrollView;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
+import android.widget.ScrollView;
+import android.widget.Scroller;
 import android.widget.Spinner;
 import android.widget.Switch;
 import android.widget.TableLayout;
@@ -48,19 +51,17 @@ import static org.sasehash.burgerwp.Type.IMAGE;
 import static org.sasehash.burgerwp.Type.INT;
 import static org.sasehash.burgerwp.Type.LONG;
 
-/**
- * Created by sami on 13/10/17.
- */
 
 /**
  * Activity used for creating a config
  */
 
 public class Configurator extends AppCompatActivity {
-    private TableLayout v;
+    private TableLayout tabelle;
     private static SharedPreferences.Editor newSettings;
     private static ArrayList<String> intentKeys = new ArrayList<>();
-    public final static String[] preconfigurated = new String[] {
+    private ArrayList<View> rowsList = new ArrayList<>();
+    public final static String[] preconfigurated = new String[]{
             "standard",
             "christmas",
     };
@@ -111,18 +112,21 @@ public class Configurator extends AppCompatActivity {
         // |     |--table with settings
         // |--Buttons (in a Row) (apply reset default, export, import, add a row, remove a row etc...)
 
-
+        ScrollView ultraScroller = new ScrollView(this);
         HorizontalScrollView scroller = new HorizontalScrollView(this);
-        v = new TableLayout(this);
-        scroller.addView(v);
-        createTable(this.v);
+        tabelle = new TableLayout(this);
+        scroller.addView(tabelle);
+        createTable(this.tabelle);
 
 
         LinearLayout superLayout = new LinearLayout(this);
         superLayout.setOrientation(LinearLayout.VERTICAL);
         superLayout.addView(scroller);
         View.inflate(this, R.layout.buttons, superLayout);
-        setContentView(superLayout);
+
+        ultraScroller.addView(superLayout);
+
+        setContentView(ultraScroller);
     }
 
     //functions called when buttons are pressed
@@ -249,7 +253,7 @@ public class Configurator extends AppCompatActivity {
      * there is a "objects" key that contains a set with all the key with entries
      * One Entry contains :
      * /!\ example for accessing count : settings.getBoolean("nameofentry_count","");
-     *
+     * <p>
      * count (eg 5 to draw this object 5 times)
      * isExternalResource
      * image
@@ -271,7 +275,7 @@ public class Configurator extends AppCompatActivity {
 
 
     private void loadChristmasConfig() {
-        loadChristmasConfig(this,newSettings);
+        loadChristmasConfig(this, newSettings);
         //restart activity
         startActivity(new Intent(this, Configurator.class));
     }
@@ -306,9 +310,9 @@ public class Configurator extends AppCompatActivity {
         }
         edit.apply();
     }
+
     /**
      * the authentic wallpaper
-     *
      */
     public static void resetConfig(Context c, SharedPreferences.Editor edit) {
         SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(c);
@@ -376,7 +380,7 @@ public class Configurator extends AppCompatActivity {
     }
 
     private void addHeader() {
-        addHeader(this.v);
+        addHeader(this.tabelle);
     }
 
     private CompoundButton.OnCheckedChangeListener generateToggleButtonListener(final String s, final int i) {
@@ -435,16 +439,17 @@ public class Configurator extends AppCompatActivity {
     }
 
 
-    private void createTable(TableLayout v) {
+    private void createTable(TableLayout tabelle) {
         ArrayAdapter<String> preconfigs = new ArrayAdapter<String>(this, R.layout.selector, preconfigurated);
         Spinner preconfigSelector = new Spinner(this);
         preconfigSelector.setAdapter(preconfigs);
         preconfigSelector.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             private boolean first = true;
+
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 if (first) {
-                    first= false;
+                    first = false;
                 } else {
                     //sorry didn't find anything beautifuler
                     if (parent.getItemAtPosition(position).equals(preconfigurated[0])) {
@@ -465,14 +470,14 @@ public class Configurator extends AppCompatActivity {
             }
         });
 
-        v.addView(preconfigSelector);
+        tabelle.addView(preconfigSelector);
 
-        addHeader(v);
+        addHeader(tabelle);
         SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(this);
         Set<String> rows = settings.getStringSet("objects", null);
         //a e s t h e t i c s
-        v.setPadding(5, 5, 5, 5);
-        v.setStretchAllColumns(true);
+        tabelle.setPadding(5, 5, 5, 5);
+        tabelle.setStretchAllColumns(true);
         //
         if (rows == null) {
             resetConfig();
@@ -483,66 +488,96 @@ public class Configurator extends AppCompatActivity {
         }
         int intentCounterHelper = -1;
         for (String s : rows) {
-            final String helper = s;
-            TableRow current = new TableRow(this);
-            for (int i = 0; i < prefvalues.length; i++) {
-                if (prefvaluesType[i] == BOOL) {
-                    Switch tb = new Switch(this);
-                    tb.setChecked(Boolean.parseBoolean(settings.getString(s + "_" + prefvalues[i], "false")));
-                    tb.setOnCheckedChangeListener(generateToggleButtonListener(s, i));
-                    current.addView(tb);
-                    continue;
-                }
-                if (prefvaluesType[i] == IMAGE) {
-                    ImageButton ib = new ImageButton(this);
-                    try {
-                        int id = Integer.parseInt(settings.getString(s + "_" + prefvalues[i], ""));
-                        ib.setImageBitmap(BitmapFactory.decodeResource(getResources(), id));
-                    } catch (Exception e) {
-                        //maybe it was an uri
-                        e.printStackTrace();
-                        try {
-                            ib.setImageBitmap(getBitmapFromUri(Uri.parse(settings.getString(s + "_" + prefvalues[i], ""))));
-                        } catch (Exception e2) {
-                            //ok use the burger
-                            e2.printStackTrace();
-                            ib.setImageBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.burger));
-                        }
-                    }
-                    ib.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
-                            Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
-                            intent.setType("image/*");
-                            intentKeys.add(helper);
-                            startActivityForResult(intent, intentKeys.size() - 1);
-                        }
-                    });
-                    current.addView(ib);
-                    continue;
-                }
-                EditText et = new EditText(this);
-                et.setText(settings.getString(s + "_" + prefvalues[i], ""));
-                et.addTextChangedListener(generateEditTextListener(s, i));
-                switch (prefvaluesType[i]) {
-                    case INT:
-                    case LONG:
-                        final int numbersOnly = 0x1002;
-                        et.setInputType(numbersOnly);
-                        break;
-                    case FLOAT:
-                        final int floatNumbersOnly = 0x2002;
-                        et.setInputType(floatNumbersOnly);
-                        break;
-                    case BOOL:
-                        break;
-                    case IMAGE:
-                        break;
-                }
-                current.addView(et);
-            }
-            v.addView(current);
+            TableRow current = getTableRow(settings, s);
+            rowsList.add(current);
+            tabelle.addView(current);
         }
+    }
+
+    @NonNull
+    private TableRow getTableRow(SharedPreferences settings, String s) {
+        final String helper = s;
+        TableRow current = new TableRow(this);
+        for (int i = 0; i < prefvalues.length; i++) {
+            if (prefvaluesType[i] == BOOL) {
+                Switch tb = new Switch(this);
+                tb.setChecked(Boolean.parseBoolean(settings.getString(s + "_" + prefvalues[i], "false")));
+                tb.setOnCheckedChangeListener(generateToggleButtonListener(s, i));
+                current.addView(tb);
+                continue;
+            }
+            if (prefvaluesType[i] == IMAGE) {
+                ImageButton ib = new ImageButton(this);
+                try {
+                    int id = Integer.parseInt(settings.getString(s + "_" + prefvalues[i], ""));
+                    ib.setImageBitmap(BitmapFactory.decodeResource(getResources(), id));
+                } catch (Exception e) {
+                    //maybe it was an uri
+                    e.printStackTrace();
+                    try {
+                        ib.setImageBitmap(getBitmapFromUri(Uri.parse(settings.getString(s + "_" + prefvalues[i], ""))));
+                    } catch (Exception e2) {
+                        //ok use the burger
+                        e2.printStackTrace();
+                        ib.setImageBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.burger));
+                    }
+                }
+                ib.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+                        intent.setType("image/*");
+                        intentKeys.add(helper);
+                        startActivityForResult(intent, intentKeys.size() - 1);
+                    }
+                });
+                current.addView(ib);
+                continue;
+            }
+            EditText et = new EditText(this);
+            et.setText(settings.getString(s + "_" + prefvalues[i], ""));
+            et.addTextChangedListener(generateEditTextListener(s, i));
+            switch (prefvaluesType[i]) {
+                case INT:
+                case LONG:
+                    final int numbersOnly = 0x1002;
+                    et.setInputType(numbersOnly);
+                    break;
+                case FLOAT:
+                    final int floatNumbersOnly = 0x2002;
+                    et.setInputType(floatNumbersOnly);
+                    break;
+                case BOOL:
+                    break;
+                case IMAGE:
+                    break;
+            }
+            current.addView(et);
+        }
+        return current;
+    }
+
+    public void addRow(View v) {
+        SharedPreferences p = PreferenceManager.getDefaultSharedPreferences(this);
+        Set<String> abc = p.getStringSet("objects", null);
+        abc.add(Integer.toString(rowsList.size()));
+        newSettings.putStringSet("objects", abc);
+        View view = getTableRow(p, Integer.toString(rowsList.size()));
+        rowsList.add(view);
+        tabelle.addView(view);
+
+    }
+
+    public void removeRow(View v) {
+        if (rowsList.size() < 1) {
+            return;
+        }
+        SharedPreferences p = PreferenceManager.getDefaultSharedPreferences(this);
+        Set<String> abc = p.getStringSet("objects", null);
+        abc.remove(Integer.toString(rowsList.size()));
+        newSettings.putStringSet("objects", abc);
+        tabelle.removeView(rowsList.get(rowsList.size() - 1));
+        rowsList.remove(rowsList.size() - 1);
     }
 
     private Bitmap getBitmapFromUri(Uri uri) throws IOException {

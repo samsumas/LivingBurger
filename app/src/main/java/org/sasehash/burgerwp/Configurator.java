@@ -18,6 +18,7 @@ import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.SparseArray;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -27,7 +28,6 @@ import android.widget.HorizontalScrollView;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
-import android.widget.Scroller;
 import android.widget.Spinner;
 import android.widget.Switch;
 import android.widget.TableLayout;
@@ -37,6 +37,7 @@ import android.widget.Toast;
 
 import java.io.File;
 import java.io.FileDescriptor;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -59,7 +60,9 @@ import static org.sasehash.burgerwp.Type.LONG;
 public class Configurator extends AppCompatActivity {
     private TableLayout tabelle;
     private static SharedPreferences.Editor newSettings;
-    private static ArrayList<String> intentKeys = new ArrayList<>();
+    private static SparseArray<String> intentKeys = new SparseArray<>();
+    private static SparseArray<ImageButton> buttonKeys = new SparseArray<>();
+    private static int actualIntentKeysID = 500;
     private ArrayList<View> rowsList = new ArrayList<>();
     public final static String[] preconfigurated = new String[]{
             "standard",
@@ -87,17 +90,38 @@ public class Configurator extends AppCompatActivity {
     private final int importIntentID = 703;
 
     //the image requested
+
+    /**
+     * Is called (from the api) when the applications gets data (images, files) from the User with the OS-picker.
+     *
+     * @param requestCode id of intent
+     * @param resultCode  successful or not
+     * @param data        the requested data
+     */
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (resultCode == RESULT_OK) {
             if (importIntentID == requestCode) {
                 importChanges(data);
-            } else {
-                String helper = intentKeys.get(requestCode);
-                intentKeys.remove(requestCode);
-                newSettings.putString(helper + "_image", data.getDataString());
-                newSettings.putString(helper + "_isExternalResource", "true");
+            } else if (intentKeys.get(requestCode) != null) {
+                try {
+                    String actualKey = intentKeys.get(requestCode);
+
+                    //try to set the image in settings + in the button, it works (^o^)
+                    Bitmap b = getBitmapFromUri(data.getData());
+                    File localBitmap = backupBitmapFromBitmap(b, actualKey);
+                    buttonKeys.get(requestCode).setImageBitmap(b);
+                    newSettings.putString(actualKey + "_image", localBitmap.getAbsolutePath());
+                    newSettings.putString(actualKey + "_isExternalResource", "true");
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    Toast.makeText(this, "Error while loading selected Image", Toast.LENGTH_SHORT).show();
+                } finally {
+                    //remove now unneeded values from the arrays
+                    intentKeys.remove(requestCode);
+                    buttonKeys.remove(requestCode);
+                }
             }
         }
     }
@@ -134,14 +158,28 @@ public class Configurator extends AppCompatActivity {
         startActivity(new Intent(this, MainActivity.class));
     }
 
+    /**
+     * Applies the changes in newSettings to the apps settings.
+     *
+     * @param v needed for the api, idk what it is O:)
+     */
     public void applyChanges(View v) {
         newSettings.apply();
         //close after applying
         cancelChanges(v);
     }
 
+    /**
+     * Import changes from a file, the intent contains the files uri
+     *
+     * @param intent contains the files uri, is given from the android api
+     */
     public void importChanges(Intent intent) {
         try {
+            if (intent.getData() == null) {
+                //this might happen, just ignore it
+                return;
+            }
             InputStream inputStream = getContentResolver().openInputStream(intent.getData());
             if (inputStream == null) {
                 throw new IllegalStateException("InputStream is Null!");
@@ -181,6 +219,11 @@ public class Configurator extends AppCompatActivity {
         }
     }
 
+    /**
+     * Send an Intent : the user has to choose a configuration file on his device to load it
+     *
+     * @param v needed by api
+     */
     public void importChanges(View v) {
         //send out an Intent!
         Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
@@ -188,6 +231,11 @@ public class Configurator extends AppCompatActivity {
         startActivityForResult(intent, importIntentID);
     }
 
+    /**
+     * Save the current configuration to a file
+     *
+     * @param v needed by api
+     */
     public void exportChanges(View v) {
         SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(this);
         Set<String> objectNames = settings.getStringSet("objects", null);
@@ -232,41 +280,15 @@ public class Configurator extends AppCompatActivity {
     /* Checks if external storage is available for read and write */
     public boolean isExternalStorageWritable() {
         String state = Environment.getExternalStorageState();
-        if (Environment.MEDIA_MOUNTED.equals(state)) {
-            return true;
-        }
-        return false;
+        return Environment.MEDIA_MOUNTED.equals(state);
     }
 
     /* Checks if external storage is available to at least read */
     public boolean isExternalStorageReadable() {
         String state = Environment.getExternalStorageState();
-        if (Environment.MEDIA_MOUNTED.equals(state) ||
-                Environment.MEDIA_MOUNTED_READ_ONLY.equals(state)) {
-            return true;
-        }
-        return false;
+        return Environment.MEDIA_MOUNTED.equals(state) || Environment.MEDIA_MOUNTED_READ_ONLY.equals(state);
     }
 
-    /**
-     * Good time to define how the config should be saved
-     * there is a "objects" key that contains a set with all the key with entries
-     * One Entry contains :
-     * /!\ example for accessing count : settings.getBoolean("nameofentry_count","");
-     * <p>
-     * count (eg 5 to draw this object 5 times)
-     * isExternalResource
-     * image
-     * x
-     * y
-     * actualTime
-     * totalTime
-     * selfDestroy
-     * bouncing
-     * speed
-     * rotation
-     * scalingFactor
-     */
     public void resetConfig() {
         resetConfig(this, newSettings);
         //restart activity
@@ -345,26 +367,9 @@ public class Configurator extends AppCompatActivity {
         edit.apply();
     }
 
-    /**help :
-     * Contructor for a ToDraw. Note that you need to set xvec,yvec and rvec if you want your object to move!
-     *
-     * @param texture
-     * @param x
-     * @param y
-     * @param currentMovementTime
-     * @param maxMovementTime
-     * @param selfDestroy
-     * @param bouncing
-     * @param speed
-     * @param rotation
-     * @param scaler
-     */
-
     /**
      * adds the standard Header to current TableLayout, which may look like this:
      * bitmap,xpos,ypos,....and so on
-     *
-     * @return
      */
     private void addHeader(TableLayout v) {
         TableRow header = new TableRow(this);
@@ -373,7 +378,6 @@ public class Configurator extends AppCompatActivity {
         for (String s : options) {
             TextView tv = new TextView(this);
             tv.setText(s);
-            tv.setGravity(View.TEXT_ALIGNMENT_CENTER);
             header.addView(tv);
         }
         v.addView(header);
@@ -383,6 +387,13 @@ public class Configurator extends AppCompatActivity {
         addHeader(this.tabelle);
     }
 
+    /**
+     * generate a Button Listener, like generateEditTextListener but for buttons (for boolean values)
+     *
+     * @param s the key
+     * @param i the ith Item
+     * @return
+     */
     private CompoundButton.OnCheckedChangeListener generateToggleButtonListener(final String s, final int i) {
         return new CompoundButton.OnCheckedChangeListener() {
             @Override
@@ -392,6 +403,14 @@ public class Configurator extends AppCompatActivity {
         };
     }
 
+    /**
+     * generate a Listener for a text field, so when you enter 5, the 5 is saved into the settings editor
+     *
+     * @param str the key
+     * @param i   the ith Item
+     * @return a textwatcher that checks if text is correct (a int can't contain chars, for example) and sets the new
+     * value into the settingseditor
+     */
     private TextWatcher generateEditTextListener(final String str, final int i) {
         return new TextWatcher() {
             @Override
@@ -438,12 +457,16 @@ public class Configurator extends AppCompatActivity {
         };
     }
 
-
+    /**
+     * sets all the row  in the table
+     *
+     * @param tabelle the table which contains nothing before this call
+     */
     private void createTable(TableLayout tabelle) {
-        ArrayAdapter<String> preconfigs = new ArrayAdapter<String>(this, R.layout.selector, preconfigurated);
-        Spinner preconfigSelector = new Spinner(this);
-        preconfigSelector.setAdapter(preconfigs);
-        preconfigSelector.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+        ArrayAdapter<String> preConfigs = new ArrayAdapter<String>(this, R.layout.selector, preconfigurated);
+        Spinner preConfigSelector = new Spinner(this);
+        preConfigSelector.setAdapter(preConfigs);
+        preConfigSelector.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             private boolean first = true;
 
             @Override
@@ -470,15 +493,18 @@ public class Configurator extends AppCompatActivity {
             }
         });
 
-        tabelle.addView(preconfigSelector);
+        //add first row to this table, which is the preConfigSelector
+        tabelle.addView(preConfigSelector);
 
+        //add header (name of options)
         addHeader(tabelle);
+
         SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(this);
         Set<String> rows = settings.getStringSet("objects", null);
         //a e s t h e t i c s
         tabelle.setPadding(5, 5, 5, 5);
         tabelle.setStretchAllColumns(true);
-        //
+        //if no config, load standard config
         if (rows == null) {
             resetConfig();
             rows = settings.getStringSet("objects", null);
@@ -486,7 +512,7 @@ public class Configurator extends AppCompatActivity {
                 throw new IllegalStateException("Settings not existing and generating new settings didn't work");
             }
         }
-        int intentCounterHelper = -1;
+        //generate the rows with actual values, put them in the rowslist
         for (String s : rows) {
             TableRow current = getTableRow(settings, s);
             rowsList.add(current);
@@ -507,17 +533,19 @@ public class Configurator extends AppCompatActivity {
                 continue;
             }
             if (prefvaluesType[i] == IMAGE) {
-                ImageButton ib = new ImageButton(this);
+                final ImageButton ib = new ImageButton(this);
                 try {
-                    int id = Integer.parseInt(settings.getString(s + "_" + prefvalues[i], ""));
+                    //try to load this image as internal resource
+                    int id = Integer.parseInt(settings.getString(s + "_" + prefvalues[i], "0"));
                     ib.setImageBitmap(BitmapFactory.decodeResource(getResources(), id));
                 } catch (Exception e) {
-                    //maybe it was an uri
+                    //maybe it was an File, that means it is an external (on the sd card) resource
                     e.printStackTrace();
                     try {
-                        ib.setImageBitmap(getBitmapFromUri(Uri.parse(settings.getString(s + "_" + prefvalues[i], ""))));
+                        Bitmap loadedImage = BitmapFactory.decodeFile(settings.getString(s + "_" + prefvalues[i], ""));
+                        ib.setImageBitmap(loadedImage);
                     } catch (Exception e2) {
-                        //ok use the burger
+                        //ok use the burger, the content in this setting is invalid
                         e2.printStackTrace();
                         ib.setImageBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.burger));
                     }
@@ -527,16 +555,19 @@ public class Configurator extends AppCompatActivity {
                     public void onClick(View v) {
                         Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
                         intent.setType("image/*");
-                        intentKeys.add(helper);
-                        startActivityForResult(intent, intentKeys.size() - 1);
+                        ++actualIntentKeysID;
+                        intentKeys.put(actualIntentKeysID, helper);
+                        buttonKeys.put(actualIntentKeysID, ib);
+                        startActivityForResult(intent, actualIntentKeysID);
                     }
                 });
                 current.addView(ib);
                 continue;
             }
             EditText et = new EditText(this);
-            et.setText(settings.getString(s + "_" + prefvalues[i], ""));
+            et.setText(settings.getString(s + "_" + prefvalues[i], "0"));
             et.addTextChangedListener(generateEditTextListener(s, i));
+            //the magical numbers limits the input in the fields, so you can only type number in a int field, per example
             switch (prefvaluesType[i]) {
                 case INT:
                 case LONG:
@@ -560,8 +591,12 @@ public class Configurator extends AppCompatActivity {
     public void addRow(View v) {
         SharedPreferences p = PreferenceManager.getDefaultSharedPreferences(this);
         Set<String> abc = p.getStringSet("objects", null);
+        if (abc == null) {
+            throw new IllegalStateException("broken settings! objects not found!");
+        }
         abc.add(Integer.toString(rowsList.size()));
         newSettings.putStringSet("objects", abc);
+        //TODO : find better unique keys that are better then "rowslist.size()" !
         View view = getTableRow(p, Integer.toString(rowsList.size()));
         rowsList.add(view);
         tabelle.addView(view);
@@ -574,18 +609,64 @@ public class Configurator extends AppCompatActivity {
         }
         SharedPreferences p = PreferenceManager.getDefaultSharedPreferences(this);
         Set<String> abc = p.getStringSet("objects", null);
+        if (abc == null) {
+            throw new IllegalStateException("broken settings! objects not found!");
+        }
+        //TODO : find better unique keys that are better then "rowslist.size()" !
         abc.remove(Integer.toString(rowsList.size()));
         newSettings.putStringSet("objects", abc);
         tabelle.removeView(rowsList.get(rowsList.size() - 1));
         rowsList.remove(rowsList.size() - 1);
     }
 
+    /**
+     * Saves image in internal app storage, so you can retrieve the image later (eg after a restart)
+     * /!\ overwrite existing images with same filenames
+     *
+     * @param uri      imageLocation
+     * @param filename name of image (named like the key of the object)
+     * @return the File containing the copy of the image
+     * @throws IOException if something fails
+     */
+    private File backupBitmapFromUri(Uri uri, String filename) throws IOException {
+        return backupBitmapFromBitmap(getBitmapFromUri(uri), filename);
+    }
+
+    /**
+     * Saves image in internal app storage, so you can retrieve the image later (eg after a restart)
+     * /!\ overwrite existing images with same filenames
+     * @param bmp Source
+     * @param filename filename
+     * @return the file with the backup saved in the internal storage
+     * @throws IOException if something failed
+     */
+    private File backupBitmapFromBitmap(Bitmap bmp, String filename) throws IOException {
+        File backupLocation = new File(this.getFilesDir(), filename);
+        //create File
+        FileOutputStream fos = new FileOutputStream(backupLocation);
+        //save image in it
+        bmp.compress(Bitmap.CompressFormat.PNG, 0, fos);
+        //close it
+        fos.close();
+        return backupLocation;
+    }
+
+    /**
+     * Loads Bitmap from Uri, copypasted from api docs
+     * @param uri the Uri
+     * @return the bitmap loaded from the uri
+     * @throws IOException if something fails
+     */
     private Bitmap getBitmapFromUri(Uri uri) throws IOException {
         ParcelFileDescriptor parcelFileDescriptor =
                 getContentResolver().openFileDescriptor(uri, "r");
+        if (parcelFileDescriptor == null) {
+            throw new IOException("Could not read texture!");
+        }
         FileDescriptor fileDescriptor = parcelFileDescriptor.getFileDescriptor();
         Bitmap image = BitmapFactory.decodeFileDescriptor(fileDescriptor);
         parcelFileDescriptor.close();
+
         return image;
     }
 }

@@ -22,6 +22,7 @@ import android.service.wallpaper.WallpaperService;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 
+import java.io.File;
 import java.io.FileDescriptor;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -29,10 +30,6 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-
-/**
- * Created by sami on 08/10/17.
- */
 
 public class JumpingBurger extends WallpaperService {
 
@@ -44,23 +41,8 @@ public class JumpingBurger extends WallpaperService {
     private class JumpingEngine extends Engine {
         private final double NEARLY_ZERO = 0.1;
         /* Values that can be tweaked */
-        private final boolean runAway;
-        private final int burgerRunningTime = Integer.MAX_VALUE;
-        private final int pizzaRunningTime = Integer.MAX_VALUE;
-        private final int heartRunningTime = Integer.MAX_VALUE;
-        private final int burgerTextureID = R.drawable.burger;
-        private final int heartTextureID = R.drawable.heart;
-        private final int pizzaTextureID = R.drawable.pizza;
-        private final boolean burgerIsJumping = true;
-        private final boolean pizzaIsJumping = false;
         private final int backgroundColor;
-        private final int sleepBetweenRedraws = 35;
-        private int burgerSpeed = 5;
-        private int pizzaSpeed = 5;
-        private int heartSpeed = 5;
-        private int burgerCount = 20;
-        private int pizzaCount = 20;
-        /* Values needed internally */
+        private final  static int SLEEP_BETWEEN_TWO_FRAMES = 35;
         private Handler handler = new Handler();
         private boolean visibility = true;
         private long time;
@@ -82,14 +64,8 @@ public class JumpingBurger extends WallpaperService {
         public JumpingEngine() {
             /* Load values from preferences */
             SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(JumpingBurger.this);
-            runAway = settings.getBoolean("pref_run_away", false);
             useBackgroundImage = settings.getBoolean("pref_bg_color_or_bg_image", false);
             backgroundColor = settings.getInt("bg_color_int", Color.BLACK);
-            burgerCount = Integer.parseInt(settings.getString("burger_count", Integer.toString(burgerCount)));
-            burgerSpeed = Integer.parseInt(settings.getString("burger_speed", Integer.toString(burgerSpeed)));
-            pizzaCount = Integer.parseInt(settings.getString("pizza_count", Integer.toString(pizzaCount)));
-            pizzaSpeed = Integer.parseInt(settings.getString("pizza_speed", Integer.toString(pizzaSpeed)));
-
 
             if (useBackgroundImage) {
                 try {
@@ -104,13 +80,17 @@ public class JumpingBurger extends WallpaperService {
                     try {
                         InputStream is = getContentResolver().openInputStream(uri);
                         backgroundImage = BitmapFactory.decodeStream(is);
-                        try {
-                            is.close();
-                        } catch (IOException e) {
-                            //well don't care about it, can't close what isn't opened lol
+                        //close inputstream
+                        if (is != null) {
+                            try {
+                                is.close();
+                            } catch (IOException e) {
+                                //well don't care about it, can't close what isn't opened lol
+                            }
                         }
                     } catch (java.lang.SecurityException e) {
-                        //permission whatever,remove wrong preferences
+                        //FIXME
+
                         stopUsingBackgroundImage();
                     }
 
@@ -138,25 +118,6 @@ public class JumpingBurger extends WallpaperService {
             useBackgroundImage = false;
         }
 
-        /**
-         * Good time to define how the config should be saved
-         * there is a "objects" key that contains a set with all the key with entries
-         * One Entry contains :
-         * /!\ example for accessing count : settings.getBoolean("nameofentry_count","");
-         * <p>
-         * count (eg 5 to draw this object 5 times)
-         * isExternalResource
-         * image
-         * x
-         * y
-         * actualTime
-         * totalTime
-         * selfDestroy
-         * bouncing
-         * speed
-         * rotation
-         * scalingFactor
-         */
         /**
          * Loads config from sharedpreferences into the engine.
          */
@@ -220,23 +181,32 @@ public class JumpingBurger extends WallpaperService {
             try {
                 //load externalResource
                 if (Boolean.parseBoolean(settings.getString(s + "_isExternalResource", "false"))) {
-                    Uri file = Uri.parse(settings.getString(s + "_image", ""));
-                    texture = getBitmapFromUri(file);
+                    texture = BitmapFactory.decodeFile(settings.getString(s + "_image", ""));
                 } else {
                     String id = settings.getString(s + "_image", null);
                     texture = BitmapFactory.decodeResource(getResources(), Integer.parseInt(id));
                 }
             } catch (Exception e) {
                 //when failling to load texture, use the burger one
-                texture = BitmapFactory.decodeResource(getResources(), burgerTextureID);
+                //FIXME
+                texture = BitmapFactory.decodeResource(getResources(), R.drawable.burger);
                 e.printStackTrace();
             }
             return texture;
         }
 
+        /** loads an image from a URI, copy pasted from api doc
+         *
+         * @param uri the uri of image
+         * @return image, the image as bitmap
+         * @throws IOException when something failed
+         */
         private Bitmap getBitmapFromUri(Uri uri) throws IOException {
             ParcelFileDescriptor parcelFileDescriptor =
                     getContentResolver().openFileDescriptor(uri, "r");
+            if (parcelFileDescriptor == null) {
+                throw new IOException("FileDescriptor broken!");
+            }
             FileDescriptor fileDescriptor = parcelFileDescriptor.getFileDescriptor();
             Bitmap image = BitmapFactory.decodeFileDescriptor(fileDescriptor);
             parcelFileDescriptor.close();
@@ -244,10 +214,10 @@ public class JumpingBurger extends WallpaperService {
         }
 
         /**
-         * checkValue
+         * checkValue, throws an error if value is not set
          *
-         * @param a
-         * @param settings
+         * @param a key of value
+         * @param settings the actual settings
          */
         private void checkValue(String a, SharedPreferences settings) {
             if (!settings.contains(a)) {
@@ -256,10 +226,10 @@ public class JumpingBurger extends WallpaperService {
         }
 
         /**
-         * moveObject
+         * moveObject, moves a ToDraw according to his xVec/yVec/rVec
          *
-         * @param td
-         * @param t
+         * @param td actual object that has to be moved (or not)
+         * @param t time elapsed since last movement
          */
         public void moveObject(ToDraw td, long t) {
             long dt = t + td.getCurrentMovementTime();
@@ -450,23 +420,6 @@ public class JumpingBurger extends WallpaperService {
         }
 
         /**
-         * Spanw pizza with parameter 1
-         */
-        private void spawnPizza() {
-            spawnPizza(1);
-        }
-
-        /**
-         * Spawn pizza
-         *
-         * @param i
-         */
-        private void spawnPizza(int i) {
-            Bitmap pizzaTexture = BitmapFactory.decodeResource(getResources(), pizzaTextureID);
-            objects.add(new ToDraw(pizzaTexture, 0, 0, 0, burgerRunningTime, true, pizzaIsJumping, pizzaSpeed, 0, 1, true ));
-        }
-
-        /**
          * tiling and draw
          *
          * @param bmp
@@ -523,7 +476,7 @@ public class JumpingBurger extends WallpaperService {
             time = t;
             handler.removeCallbacks(drawRunner);
             if (visibility) {
-                handler.postDelayed(drawRunner, sleepBetweenRedraws);
+                handler.postDelayed(drawRunner, SLEEP_BETWEEN_TWO_FRAMES);
             }
         }
 
@@ -577,7 +530,6 @@ public class JumpingBurger extends WallpaperService {
          */
         private void runAwayFromFinger(ToDraw td, MotionEvent event) {
             td.setCurrentMovementTime(0);
-            td.setMaxMovementTime(burgerRunningTime);
             int dx = Math.round(td.getX() - event.getX());
             int dy = Math.round(td.getY() - event.getY());
 

@@ -2,6 +2,10 @@
  * Licensed under GPL 3.0
  */
 
+/*
+ * Licensed under GPL 3.0
+ */
+
 package org.sasehash.burgerwp;
 
 import android.content.Context;
@@ -22,6 +26,7 @@ import android.util.SparseArray;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.HorizontalScrollView;
@@ -524,6 +529,14 @@ public class Configurator extends AppCompatActivity {
     private TableRow getTableRow(SharedPreferences settings, String s) {
         final String helper = s;
         TableRow current = new TableRow(this);
+        Button deleteButton = new Button(this);
+        deleteButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                newSettings.remove(helper);
+            }
+        });
+        current.addView(deleteButton);
         for (int i = 0; i < prefvalues.length; i++) {
             if (prefvaluesType[i] == BOOL) {
                 Switch tb = new Switch(this);
@@ -594,16 +607,19 @@ public class Configurator extends AppCompatActivity {
         if (abc == null) {
             throw new IllegalStateException("broken settings! objects not found!");
         }
-        abc.add(Integer.toString(rowsList.size()));
+        String timeStamp = new java.util.Date().toString();
+        abc.add(timeStamp);
         newSettings.putStringSet("objects", abc);
-        //TODO : find better unique keys that are better then "rowslist.size()" !
-        View view = getTableRow(p, Integer.toString(rowsList.size()));
+        View view = getTableRow(p, timeStamp);
         rowsList.add(view);
         tabelle.addView(view);
-
     }
 
     public void removeRow(View v) {
+
+    }
+
+    public void removeRow(String s, View v) {
         if (rowsList.size() < 1) {
             return;
         }
@@ -613,7 +629,7 @@ public class Configurator extends AppCompatActivity {
             throw new IllegalStateException("broken settings! objects not found!");
         }
         //TODO : find better unique keys that are better then "rowslist.size()" !
-        abc.remove(Integer.toString(rowsList.size()));
+        abc.remove(s);
         newSettings.putStringSet("objects", abc);
         tabelle.removeView(rowsList.get(rowsList.size() - 1));
         rowsList.remove(rowsList.size() - 1);

@@ -6,6 +6,10 @@
  * Licensed under GPL 3.0
  */
 
+/*
+ * Licensed under GPL 3.0
+ */
+
 package org.sasehash.burgerwp;
 
 import android.graphics.Bitmap;
@@ -95,18 +99,8 @@ public class ToDraw {
         };
     }
 
-    public void setRotation(float rotation) {
-        manipulation.setRotate(rotation);
-        this.rotation = rotation;
-    }
-
     public float getScaler() {
         return scaler;
-    }
-
-    public void scale(float scaler) {
-        manipulation.preScale(scaler, scaler);
-        this.scaler = scaler;
     }
 
     private void recreate(int x, int y) {
@@ -114,18 +108,6 @@ public class ToDraw {
         manipulation.setTranslate(x, y);
         manipulation.preRotate(rotation, getMiddleX(), getMiddleY());
         manipulation.preScale(scaler, scaler);
-    }
-
-    public void setTranslateX(int x) {
-        //warning : when setting the translation, it could be that the rotation gets lost
-        //jep, the matrix implementation is slightly bugged
-        recreate(x, y);
-        this.x = x;
-    }
-
-    public void setTranslateY(int y) {
-        recreate(x, y);
-        this.y = y;
     }
 
     public int getSpeed() {

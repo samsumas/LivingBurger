@@ -6,6 +6,10 @@
  * Licensed under GPL 3.0
  */
 
+/*
+ * Licensed under GPL 3.0
+ */
+
 package org.sasehash.burgerwp;
 
 import android.content.SharedPreferences;
@@ -22,7 +26,6 @@ import android.service.wallpaper.WallpaperService;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 
-import java.io.File;
 import java.io.FileDescriptor;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -49,6 +52,7 @@ public class JumpingBurger extends WallpaperService {
         private Paint p = new Paint();
         private int width, height;
         private List<ToDraw> objects = new ArrayList<>();
+        private List<IDrawable> IDrawableObjects = new ArrayList<>();
         private List<ToDraw> doubles = new ArrayList<>();
         private Bitmap backgroundImage;
         private boolean useBackgroundImage;
@@ -122,6 +126,10 @@ public class JumpingBurger extends WallpaperService {
          * Loads config from sharedpreferences into the engine.
          */
         private void loadConfig() {
+            //TODO : remove me (only used for testing)
+            IDrawableObjects.add(new SimpleDrawable(getBaseContext()));
+            //end of removeme
+
             SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(JumpingBurger.this);
             Set<String> objectNames = settings.getStringSet("objects", null);
             if (objectNames == null) {
@@ -455,10 +463,17 @@ public class JumpingBurger extends WallpaperService {
             Canvas canvas = null;
             try {
                 canvas = holder.lockCanvas();
-                canvas.drawColor(backgroundColor);
                 if (useBackgroundImage) {
                     tilingAndDraw(backgroundImage, canvas);
+                } else {
+                    canvas.drawColor(backgroundColor);
                 }
+
+                //new implementation using interfaces to make writing code easier
+                for (IDrawable id : IDrawableObjects) {
+                    id.draw(canvas);
+                }
+
                 for (ToDraw actual : objects) {
                     doubles.clear();
                     moveObject(actual, t - time);

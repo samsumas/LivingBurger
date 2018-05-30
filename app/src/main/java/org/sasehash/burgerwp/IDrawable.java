@@ -10,15 +10,19 @@
  * Licensed under GPL 3.0
  */
 
+/*
+ * Licensed under GPL 3.0
+ */
+
+/*
+ * Licensed under GPL 3.0
+ */
+
 package org.sasehash.burgerwp;
 
 import android.graphics.Canvas;
 
 public interface IDrawable {
-    enum position {
-        TOP, LEFT, RIGHT, DOWN, ON_SCREEN
-    }
-
     /**
      * Draws the thing to the canvas (the canvas has to be writable)
      *

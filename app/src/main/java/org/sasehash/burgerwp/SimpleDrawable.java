@@ -10,6 +10,14 @@
  * Licensed under GPL 3.0
  */
 
+/*
+ * Licensed under GPL 3.0
+ */
+
+/*
+ * Licensed under GPL 3.0
+ */
+
 package org.sasehash.burgerwp;
 
 import android.content.Context;
@@ -22,6 +30,9 @@ import android.graphics.Paint;
 import android.util.DisplayMetrics;
 
 public class SimpleDrawable implements IDrawable {
+    enum position {
+        TOP, LEFT, RIGHT, DOWN, ON_SCREEN
+    }
 
     /**
      * Speed in X - Direction in DP (DP are independent of screen size, which makes it better then pixels)

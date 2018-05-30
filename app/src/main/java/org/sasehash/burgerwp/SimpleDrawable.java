@@ -6,18 +6,6 @@
  * Licensed under GPL 3.0
  */
 
-/*
- * Licensed under GPL 3.0
- */
-
-/*
- * Licensed under GPL 3.0
- */
-
-/*
- * Licensed under GPL 3.0
- */
-
 package org.sasehash.burgerwp;
 
 import android.content.Context;
@@ -58,6 +46,17 @@ public class SimpleDrawable implements IDrawable {
     private Context context;
     private int dpi;
     private float dpToPixels;
+
+    public SimpleDrawable(Bitmap bmp, Context context, float dirX, float dirY, float rotation) {
+        this(bmp, context, dirX, dirY);
+        this.rotation = rotation;
+    }
+
+    public SimpleDrawable(Bitmap bmp, Context context, float dirX, float dirY) {
+        this(bmp, context);
+        this.dirX = dirX;
+        this.dirY = dirY;
+    }
 
     public SimpleDrawable(Bitmap bmp, Context context) {
         this.texture = bmp;

@@ -6,6 +6,10 @@
  * Licensed under GPL 3.0
  */
 
+/*
+ * Licensed under GPL 3.0
+ */
+
 package org.sasehash.burgerwp;
 
 import android.content.Context;
@@ -22,12 +26,12 @@ public class SimpleDrawable implements IDrawable {
     /**
      * Speed in X - Direction in DP (DP are independent of screen size, which makes it better then pixels)
      */
-    private float dirX = 1.0F;
+    private float dirX = 3.0F;
 
     /**
      * Speed in Y - Direction in DP
      */
-    private float dirY = 1.0F;
+    private float dirY = 3.0F;
 
     /**
      * Rotation speed in degrees
@@ -35,6 +39,7 @@ public class SimpleDrawable implements IDrawable {
     private float rotation = 1.0F;
 
     private Matrix currentPosition = new Matrix();
+    private Matrix currentRotation = new Matrix();
     private Bitmap texture;
     private Paint p;
     private float middleX;
@@ -66,23 +71,52 @@ public class SimpleDrawable implements IDrawable {
 
     @Override
     public void draw(Canvas canvas) {
+        switch (isOutsideScreen()) {
+            case ON_SCREEN:
+                break;
+            case TOP:
+                dirY = Math.abs(dirX);
+                break;
+            case DOWN:
+                dirY = -Math.abs(dirY);
+                break;
+            case LEFT:
+                dirX = Math.abs(dirX);
+                break;
+            case RIGHT:
+                dirX = -Math.abs(dirX);
+                break;
+        }
         //multiply with dpToPixel so burgers aren't faster on screens with low resolution
         currentPosition.postTranslate(dirX * dpToPixels, dirY * dpToPixels);
-        currentPosition.preRotate(rotation, middleX, middleY);
-        canvas.drawBitmap(texture, currentPosition, p);
+        currentRotation.preRotate(rotation, middleX, middleY);
+        Matrix transformation = new Matrix(currentRotation);
+        transformation.postConcat(currentPosition);
+        canvas.drawBitmap(texture, transformation, p);
+    }
+
+    private position isOutsideScreen() {
+        float start[] = new float[]{0, 0};
+        currentPosition.mapPoints(start);
+
+        DisplayMetrics dm = context.getResources().getDisplayMetrics();
+        if (start[0] < 0) {
+            return position.LEFT;
+        }
+        if (start[0] > dm.widthPixels - texture.getScaledWidth(dpi)) {
+            return position.RIGHT;
+        }
+        if (start[1] < 0) {
+            return position.TOP;
+        }
+        if (start[1] > dm.heightPixels - texture.getScaledWidth(dpi)) {
+            return position.DOWN;
+        }
+        return position.ON_SCREEN;
     }
 
     @Override
     public boolean canBeReplaced() {
-        float start[] = new float[]{0, 0};
-        currentPosition.mapPoints(start);
-        //px = dp * (dpi / 160)
-        // dp = px * 160 /dpi
-        DisplayMetrics dm = context.getResources().getDisplayMetrics();
-        return start[0] < -texture.getScaledHeight(dpi)  //exited left
-                || start[0] > dm.widthPixels * 160 / dpi //exited right
-                || start[1] < -texture.getScaledWidth(dpi) //exited up
-                || start[1] > dm.heightPixels * 160 / dpi; //exited down
-
+        return false;
     }
 }

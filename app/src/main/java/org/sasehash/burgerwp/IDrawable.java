@@ -18,9 +18,14 @@
  * Licensed under GPL 3.0
  */
 
+/*
+ * Licensed under GPL 3.0
+ */
+
 package org.sasehash.burgerwp;
 
 import android.graphics.Canvas;
+import android.view.MotionEvent;
 
 public interface IDrawable {
     /**
@@ -34,4 +39,6 @@ public interface IDrawable {
      * @return true => draw(canvas) will do nothing
      */
     boolean canBeReplaced();
+
+    void event(MotionEvent event);
 }

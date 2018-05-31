@@ -16,6 +16,7 @@ import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.util.DisplayMetrics;
+import android.view.MotionEvent;
 
 public class SimpleDrawable implements IDrawable {
     enum position {
@@ -52,12 +53,6 @@ public class SimpleDrawable implements IDrawable {
         this.rotation = rotation;
     }
 
-    public SimpleDrawable(Bitmap bmp, Context context, float dirX, float dirY) {
-        this(bmp, context);
-        this.dirX = dirX;
-        this.dirY = dirY;
-    }
-
     public SimpleDrawable(Bitmap bmp, Context context) {
         this.texture = bmp;
         p = new Paint();
@@ -73,6 +68,23 @@ public class SimpleDrawable implements IDrawable {
         middleY = texture.getScaledWidth(dpi) / 2;
 
         this.context = context;
+
+        //Start at random place
+
+        float randomX = (float) Math.random() * context.getResources().getDisplayMetrics().widthPixels;
+        float randomY = (float) Math.random() * context.getResources().getDisplayMetrics().heightPixels;
+        currentPosition.preTranslate(randomX, randomY);
+
+    }
+
+    public SimpleDrawable(Bitmap bmp, Context context, float dirX, float dirY) {
+        this(bmp, context);
+        this.dirX = dirX;
+        this.dirY = dirY;
+    }
+
+    public void event(MotionEvent event) {
+
     }
 
     public SimpleDrawable(Context context) {

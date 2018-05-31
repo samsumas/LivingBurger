@@ -6,10 +6,6 @@
  * Licensed under GPL 3.0
  */
 
-/*
- * Licensed under GPL 3.0
- */
-
 package org.sasehash.burgerwp;
 
 import android.content.SharedPreferences;
@@ -51,9 +47,7 @@ public class JumpingBurger extends WallpaperService {
         private long time;
         private Paint p = new Paint();
         private int width, height;
-        private List<ToDraw> objects = new ArrayList<>();
         private List<IDrawable> IDrawableObjects = new ArrayList<>();
-        private List<ToDraw> doubles = new ArrayList<>();
         private Bitmap backgroundImage;
         private boolean useBackgroundImage;
 
@@ -126,10 +120,6 @@ public class JumpingBurger extends WallpaperService {
          * Loads config from sharedpreferences into the engine.
          */
         private void loadConfig() {
-            //TODO : remove me (only used for testing)
-            IDrawableObjects.add(new SimpleDrawable(getBaseContext()));
-            //end of removeme
-
             SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(JumpingBurger.this);
             Set<String> objectNames = settings.getStringSet("objects", null);
             if (objectNames == null) {
@@ -157,28 +147,10 @@ public class JumpingBurger extends WallpaperService {
                 boolean runsAway = Boolean.parseBoolean(settings.getString(s + "_runsAway", "true"));
                 String c = ";";
                 for (int i = 0; i < count; i++) {
-                    ToDraw td = new ToDraw(texture, x, y, actualTime, totalTime, selfDestroy, bouncing, speed, rotation, scalingFactor, runsAway);
-                    final int abc = count;
-                    final int abc2 = i;
-                    objects.add(td);
-                    td.setxVec(new Lambda() {
-                        @Override
-                        public int l(long x) {
-                            return abc - abc2;
-                        }
-                    });
-                    td.setyVec(new Lambda() {
-                        @Override
-                        public int l(long x) {
-                            return abc2;
-                        }
-                    });
-                    td.setrVec(new Lambda() {
-                        @Override
-                        public int l(long x) {
-                            return 1;
-                        }
-                    });
+                    //ToDraw td = new ToDraw(texture, x, y, actualTime, totalTime, selfDestroy, bouncing, speed, rotation, scalingFactor, runsAway);
+                    //TODO : rework this
+                    SimpleDrawable td = new SimpleDrawable(texture, getBaseContext(), x, y, rotation);
+                    IDrawableObjects.add(td);
                 }
             }
         }
@@ -234,200 +206,6 @@ public class JumpingBurger extends WallpaperService {
         }
 
         /**
-         * moveObject, moves a ToDraw according to his xVec/yVec/rVec
-         *
-         * @param td actual object that has to be moved (or not)
-         * @param t time elapsed since last movement
-         */
-        public void moveObject(ToDraw td, long t) {
-            long dt = t + td.getCurrentMovementTime();
-            if (!td.timeLeft() || td.isVecNull()) {
-                return;
-            }
-            td.addTo(td.getxVec(t), td.getyVec(t));
-            td.addTo(td.getrVec(t));
-            td.setCurrentMovementTime(dt);
-            float rotationBackup = td.getRotation();
-            if (!isOnScreen(td)) {
-                if (td.getBouncing()) {
-                    bounce(td);
-                    //if off-screen (happens when you touch too much for a while), reset onScreen
-                    if (td.getX() < 0) {
-                        td.setX(0);
-                    }
-                    if (td.getY() < 0) {
-                        td.setY(0);
-                    }
-                    if (td.getX() > width - td.getWidth()) {
-                        td.setX(width - td.getWidth());
-                    }
-                    if (td.getY() > height - td.getHeight()) {
-                        td.setY(height - td.getHeight());
-                    }
-
-                } else {
-                    //TODO function "going from left to right" is broken. will fix this another day
-                    resetOnScreen(td);
-                }
-            }
-
-            if (Math.abs(rotationBackup - td.getRotation()) > NEARLY_ZERO) {
-                throw new IllegalStateException("Rotation changed, from " + rotationBackup + " to " + td.getRotation());
-            }
-
-        }
-
-        /**
-         * Move all object with moveObject
-         *
-         * @param t
-         */
-        public void moveObjects(long t) {
-            for (ToDraw td : objects) {
-                moveObject(td, t);
-            }
-        }
-
-        /**
-         * Util module positiv
-         *
-         * @param a
-         * @param m
-         * @return
-         */
-        private int modulo(int a, int m) {
-            return (a % m + m) % m;
-        }
-
-        /**
-         * inCorner
-         *
-         * @param td
-         * @return
-         */
-        private boolean inCorner(ToDraw td) {
-            return (td.getX() < 0 || td.getX() + td.getWidth() > width)
-                    && (td.getY() < 0 || td.getY() + td.getHeight() > height);
-        }
-
-        /**
-         * outOfScreen
-         *
-         * @param td
-         * @return
-         */
-        private boolean outOfScreen(ToDraw td) {
-            return ((td.getX() < 0 && td.getX() + td.getWidth() > 0) || (td.getX() + td.getWidth() >= width && td.getX() <= width))
-                    || ((td.getY() < 0 && td.getHeight() + td.getHeight() > 0) || (td.getY() + td.getHeight() >= height && td.getY() <= height));
-        }
-
-        /**
-         * completyOutOfScreen
-         *
-         * @param td
-         * @return
-         */
-        private boolean completelyOutOfScreen(ToDraw td) {
-            return (td.getX() + td.getWidth() < 0 || td.getX() > width)
-                    || (td.getY() + td.getHeight() < 0 || td.getY() > height);
-        }
-
-        /**
-         * rectifyX
-         *
-         * @param td
-         * @return
-         */
-        private int rectifyX(ToDraw td) {
-            if (td.getX() < 0) {
-                return td.getX() + width;
-            }
-            if (td.getX() + td.getWidth() > width) {
-                return td.getX() - width;
-            }
-            return td.getX();
-        }
-
-        /**
-         * rectifyY
-         *
-         * @param td
-         * @return
-         */
-        private int rectifyY(ToDraw td) {
-            if (td.getY() < 0) {
-                return td.getY() + height;
-            }
-            if (td.getY() + td.getHeight() > height) {
-                return td.getY() - height;
-            }
-            return td.getY();
-        }
-
-        /**
-         * resetOnScreen
-         *
-         * @param td
-         */
-        private void resetOnScreen(ToDraw td) {
-            if (completelyOutOfScreen(td)) {
-                td.setX(modulo(td.getX(), width));
-                td.setY(modulo(td.getY(), height));
-            }
-            if (outOfScreen(td)) {
-                ToDraw t = new ToDraw(td);
-                t.setX(rectifyX(t));
-                t.setY(rectifyY(t));
-                doubles.add(t);
-            }
-        }
-
-        /**
-         * bouce
-         *
-         * @param td
-         */
-        private void bounce(ToDraw td) {
-            if (!isOnScreenX(td)) {
-                td.bounceX();
-            }
-            //no else because it makes burgers disappear in corners
-            if (!isOnScreenY(td)) {
-                td.bounceY();
-            }
-        }
-
-        /**
-         * check if picture is on the screen
-         *
-         * @param td
-         * @return
-         */
-        private boolean isOnScreen(ToDraw td) {
-            return isOnScreenX(td) && isOnScreenY(td);
-        }
-
-        /**
-         * check if the picure is on the screen verticaly
-         *
-         * @param td
-         * @return
-         */
-        private boolean isOnScreenY(ToDraw td) {
-            return td.getY() == modulo(td.getY(), height - td.getHeight());
-        }
-
-        /**
-         * check if the picture is on screen horizontaly
-         *
-         * @param td
-         * @return
-         */
-        private boolean isOnScreenX(ToDraw td) {
-            return td.getX() == modulo(td.getX(), width - td.getWidth());
-        }
-
-        /**
          * tiling and draw
          *
          * @param bmp
@@ -473,16 +251,6 @@ public class JumpingBurger extends WallpaperService {
                 for (IDrawable id : IDrawableObjects) {
                     id.draw(canvas);
                 }
-
-                for (ToDraw actual : objects) {
-                    doubles.clear();
-                    moveObject(actual, t - time);
-                    //draw the doubles before the reel objects, to keep the screen from flashing!
-                    for (ToDraw td : doubles) {
-                        canvas.drawBitmap(td.getTexture(), td.getManipulation(), p);
-                    }
-                    canvas.drawBitmap(actual.getTexture(), actual.getManipulation(), p);
-                }
             } finally {
                 if (canvas != null) {
                     holder.unlockCanvasAndPost(canvas);
@@ -519,89 +287,8 @@ public class JumpingBurger extends WallpaperService {
         @Override
         public void onTouchEvent(MotionEvent event) {
             super.onTouchEvent(event);
-            for (ToDraw td : objects) {
-                runAwayFromFinger(td, event);
-            }
-            /**
-             //50 % chance to spawn hearts
-             int toSpawn = (int) (Math.random()*2);
-             if (toSpawn > 0) {
-             //if there are hearts spawning, then 50 % chance for another heart (total 25%)
-             toSpawn += (int) (Math.random() * 2);
-             if (toSpawn > 1) {
-             //25% chance for 3 hearts (total not much)
-             toSpawn += (int) (Math.random() * 1.333);
-             }
-             }
-             spawnHearts(toSpawn);
-             **/
-        }
-
-        /**
-         * run away from Finger
-         *
-         * @param td
-         * @param event
-         */
-        private void runAwayFromFinger(ToDraw td, MotionEvent event) {
-            td.setCurrentMovementTime(0);
-            int dx = Math.round(td.getX() - event.getX());
-            int dy = Math.round(td.getY() - event.getY());
-
-            //this android runs from humans away, depending on the runAway value
-            double size = Math.sqrt(dx * dx + dy * dy);
-            double vecX = ((double) dx) / size;
-            vecX *= td.getSpeed();
-            double vecY = ((double) dy) / size;
-            vecY *= td.getSpeed();
-            if (!td.isRunsAway()) {
-                vecX = -vecX;
-                vecY = -vecY;
-            }
-            final int a = (int) Math.round(vecX);
-            final int b = (int) Math.round(vecY);
-            td.resetMult();
-            td.setxVec(new Lambda() {
-                @Override
-                public int l(long x) {
-                    return a;
-                }
-            });
-            td.setyVec(new Lambda() {
-                @Override
-                public int l(long x) {
-                    return b;
-                }
-            });
-            td.setrVec(new Lambda() {
-                @Override
-                public int l(long x) {
-                    return 1;
-                }
-            });
-        }
-
-        /**
-         * Let the objects rain down (to be put in the draw method)
-         *
-         * @param td
-         */
-        private void raining(ToDraw td) {
-            raining(td, 0.0, -1.0);
-        }
-
-        /**
-         * Let the objects rain in the giving vector direction (to be put in the draw method)
-         *
-         * @param td
-         * @param dirX
-         * @param dirY
-         */
-        private void raining(ToDraw td, double dirX, double dirY) {
-            //check if not  in screen
-            if (!(td.getX() > 0 && td.getX() < width && td.getY() > 0 && td.getY() < height)) {
-                td.setX(0);
-                //TODO : continue
+            for (IDrawable id : IDrawableObjects) {
+                id.event(event);
             }
         }
 

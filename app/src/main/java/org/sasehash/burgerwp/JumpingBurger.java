@@ -38,13 +38,11 @@ public class JumpingBurger extends WallpaperService {
     }
 
     private class JumpingEngine extends Engine {
-        private final double NEARLY_ZERO = 0.1;
         /* Values that can be tweaked */
         private final int backgroundColor;
         private final  static int SLEEP_BETWEEN_TWO_FRAMES = 35;
         private Handler handler = new Handler();
         private boolean visibility = true;
-        private long time;
         private Paint p = new Paint();
         private int width, height;
         private List<IDrawable> IDrawableObjects = new ArrayList<>();
@@ -101,7 +99,6 @@ public class JumpingBurger extends WallpaperService {
             p.setFilterBitmap(false);
             p.setColor(Color.BLACK);
             p.setStyle(Paint.Style.FILL);
-            time = System.currentTimeMillis();
             //load all objects from config
             loadConfig();
         }
@@ -256,7 +253,6 @@ public class JumpingBurger extends WallpaperService {
                     holder.unlockCanvasAndPost(canvas);
                 }
             }
-            time = t;
             handler.removeCallbacks(drawRunner);
             if (visibility) {
                 handler.postDelayed(drawRunner, SLEEP_BETWEEN_TWO_FRAMES);

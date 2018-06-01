@@ -2,10 +2,6 @@
  * Licensed under GPL 3.0
  */
 
-/*
- * Licensed under GPL 3.0
- */
-
 package org.sasehash.burgerwp;
 
 import android.content.Context;
@@ -73,24 +69,38 @@ public class Configurator extends AppCompatActivity {
             "standard",
             "christmas",
     };
+
+    //TODO : recheck
     public static String[] prefvalues = new String[]{
             "count",
             "isExternalResource",
             "image",
             "x",
             "y",
-            "actualTime",
-            "totalTime",
-            "selfDestroy",
-            "bouncing",
-            "speed",
+            //"actualTime",
+            //"totalTime",
+            //"selfDestroy",
+            //"bouncing",
+            //"speed",
             "rotation",
-            "scalingFactor",
-            "runsAway"
+            //"scalingFactor",
+            //"runsAway"
     };
     //prefvalues[i] has the type prefvaluesType[i]
     public static Type[] prefvaluesType = new Type[]{
-            INT, BOOL, IMAGE, INT, INT, LONG, LONG, BOOL, BOOL, INT, FLOAT, FLOAT, BOOL
+            INT,
+            BOOL,
+            IMAGE,
+            INT,
+            INT,
+            //LONG,
+            //LONG,
+            //BOOL,
+            //BOOL,
+            //INT,
+            FLOAT,
+            //FLOAT,
+            //BOOL
     };
     private final int importIntentID = 703;
 
@@ -114,8 +124,8 @@ public class Configurator extends AppCompatActivity {
                     String actualKey = intentKeys.get(requestCode);
 
                     //try to set the image in settings + in the button, it works (^o^)
-                    Bitmap b = getBitmapFromUri(data.getData());
-                    File localBitmap = backupBitmapFromBitmap(b, actualKey);
+                    Bitmap b = getBitmapFromUri(data.getData(), getApplicationContext());
+                    File localBitmap = backupBitmapFromBitmap(b, actualKey, getApplicationContext());
                     buttonKeys.get(requestCode).setImageBitmap(b);
                     newSettings.putString(actualKey + "_image", localBitmap.getAbsolutePath());
                     newSettings.putString(actualKey + "_isExternalResource", "true");
@@ -202,10 +212,10 @@ public class Configurator extends AppCompatActivity {
                 scanner.useDelimiter(";");
                 String key = scanner.next();
                 keys.add(key);
-                System.out.append("key :" + key);
+                System.out.append("key :").append(key);
                 for (String curr : prefvalues) {
                     String read = scanner.next();
-                    System.out.append("just got " + read);
+                    System.out.append("just got ").append(read);
                     newSettings.putString(key + "_" + curr, read);
                 }
                 //ignore the rest
@@ -277,8 +287,7 @@ public class Configurator extends AppCompatActivity {
     }
 
     private void doubleAppend(StringBuilder s, String s2) {
-        s.append(s2);
-        s.append(';');
+        s.append(s2).append(';');
     }
 
 
@@ -378,18 +387,17 @@ public class Configurator extends AppCompatActivity {
      */
     private void addHeader(TableLayout v) {
         TableRow header = new TableRow(this);
-        //TODO : repalce options with better names
+        //TODO : replace options with better names
         String[] options = prefvalues;
+        TextView deleteTV = new TextView(this);
+        deleteTV.setText(R.string.Delete);
+        header.addView(deleteTV);
         for (String s : options) {
             TextView tv = new TextView(this);
             tv.setText(s);
             header.addView(tv);
         }
         v.addView(header);
-    }
-
-    private void addHeader() {
-        addHeader(this.tabelle);
     }
 
     /**
@@ -645,7 +653,7 @@ public class Configurator extends AppCompatActivity {
      * @throws IOException if something fails
      */
     private File backupBitmapFromUri(Uri uri, String filename) throws IOException {
-        return backupBitmapFromBitmap(getBitmapFromUri(uri), filename);
+        return backupBitmapFromBitmap(getBitmapFromUri(uri, getApplicationContext()), filename, getApplicationContext());
     }
 
     /**
@@ -656,8 +664,8 @@ public class Configurator extends AppCompatActivity {
      * @return the file with the backup saved in the internal storage
      * @throws IOException if something failed
      */
-    private File backupBitmapFromBitmap(Bitmap bmp, String filename) throws IOException {
-        File backupLocation = new File(this.getFilesDir(), filename);
+    public static File backupBitmapFromBitmap(Bitmap bmp, String filename, Context context) throws IOException {
+        File backupLocation = new File(context.getFilesDir(), filename);
         //create File
         FileOutputStream fos = new FileOutputStream(backupLocation);
         //save image in it
@@ -673,9 +681,9 @@ public class Configurator extends AppCompatActivity {
      * @return the bitmap loaded from the uri
      * @throws IOException if something fails
      */
-    private Bitmap getBitmapFromUri(Uri uri) throws IOException {
+    public static Bitmap getBitmapFromUri(Uri uri, Context context) throws IOException {
         ParcelFileDescriptor parcelFileDescriptor =
-                getContentResolver().openFileDescriptor(uri, "r");
+                context.getContentResolver().openFileDescriptor(uri, "r");
         if (parcelFileDescriptor == null) {
             throw new IOException("Could not read texture!");
         }

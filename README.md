@@ -5,3 +5,7 @@
  3. Have fun!
 
 ![View Video](https://raw.githubusercontent.com/samsumas/LivingBurger/master/screenNoSound.mp4)
+
+[<img src="https://f-droid.org/badge/get-it-on.png"
+      alt="Get it on F-Droid"
+      height="80">](https://f-droid.org/packages/org.sasehash.burgerwp/)

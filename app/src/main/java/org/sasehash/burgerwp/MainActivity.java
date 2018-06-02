@@ -2,6 +2,14 @@
  * Licensed under GPL 3.0
  */
 
+/*
+ * Licensed under GPL 3.0
+ */
+
+/*
+ * Licensed under GPL 3.0
+ */
+
 package org.sasehash.burgerwp;
 
 import android.app.WallpaperManager;
@@ -99,8 +107,8 @@ public class MainActivity extends AppCompatActivity {
 
     //start settings activity
     public void startSettings(View view) {
-        //startActivity(new Intent(this, SettingsActivity.class));
         startConfigurator(view);
+        //startActivity(new Intent(this, SimpleConfigurator.class));
     }
 
     public void startConfigurator(View view) {

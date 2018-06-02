@@ -1,10 +1,11 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!--
+<?xml version="1.0" encoding="utf-8"?><!--
   ~ Licensed under GPL 3.0
   -->
 
+<!-- ~ Licensed under GPL 3.0 -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="org.sasehash.burgerwp">
+
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 
     <application
@@ -35,8 +36,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".Configurator">
-        </activity>
+        <activity android:name=".Configurator" />
         <activity
             android:name=".SettingsActivity"
             android:label="@string/title_activity_settings"
@@ -45,6 +45,14 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="org.sasehash.burgerwp.MainActivity" />
         </activity>
+        <activity
+            android:name=".SimpleConfigurator"
+            android:label="@string/title_activity_simple_configurator"
+            android:theme="@style/AppTheme.NoActionBar" />
+        <activity
+            android:name=".PimpMyBurger"
+            android:label="@string/title_activity_pimp_my_burger"
+            android:theme="@style/AppTheme.NoActionBar" />
     </application>
 
 </manifest>

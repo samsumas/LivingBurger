@@ -2,6 +2,10 @@
   ~ Licensed under GPL 3.0
   -->
 
+<!--
+  ~ Licensed under GPL 3.0
+  -->
+
 <resources>
     <string name="app_name">BurgerWP</string>
     <string name="welcome">Welcome to my app!</string>
@@ -9,12 +13,68 @@
     <string name="startPreview">Press the burger to start the preview!</string>
     <string name="title_activity_settings">Settings</string>
 
+    <!-- strings related to options for simpledraw -->
+    <string-array name="configuratorParameters">
+        <item name="count">Count</item>
+        <item name="isExternalResource">Is the image located on your storage?</item>
+        <item name="image">Image</item>
+        <item name="x">dx</item>
+        <item name="y">dy</item>
+        <item name="actualTime">position of the animation (Deprecated)</item>
+        <item name="totalTime">total duration of the animation (Deprecated)</item>
+        <item name="selfDestroy">Disappears after some time</item>
+        <item name="bouncing">Bounces around borders (Deprecated)</item>
+        <item name="speed">Speed</item>
+        <item name="rotation">dR</item>
+        <item name="scalingFactor">Size</item>
+        <item name="runsAway">Runs away from tapping</item>
+    </string-array>
+    <string-array name="configuratorParametersName">
+        <item>count</item>
+        <item>isExternalResource</item>
+        <item>image</item>
+        <item>x</item>
+        <item>y</item>
+        <!--       <item>actualTime</item>-->
+        <!--       <item>totalTime</item>-->
+        <!--       <item>selfDestroy</item>-->
+        <!--       <item>bouncing</item>-->
+        <!--       <item>speed</item>-->
+        <item>rotation</item>
+        <!--       <item>scalingFactor</item>-->
+        <!--       <item>runsAway</item>-->
+    </string-array>
+    <string-array name="configuratorParametersType">
+        <item>INT</item>
+        <item>BOOL</item>
+        <item>IMAGE</item>
+        <item>INT</item>
+        <item>INT</item>
+        <!--LONG,-->
+        <!--LONG,-->
+        <!--BOOL,-->
+        <!--BOOL,-->
+        <!--INT,-->
+        <item>FLOAT</item>
+        <!--FLOAT,-->
+        <!--BOOL-->
+    </string-array>
+    <!-- buttons for pimpmyburger -->
+
+    <string name="choose_image">Choose an Image</string>
+    <string name="choose_dx">Choose X speed</string>
+    <string name="choose_dy">Choose Y speed</string>
+    <string name="choose_dr">Choose radial speed</string>
+    <string name="choose_quantity">Choose quantity</string>
+
     <!-- buttons for the configurator -->
     <string name="Apply">Apply</string>
     <string name="Reset">Reset</string>
     <string name="Cancel">Cancel</string>
     <string name="Export">Export</string>
     <string name="Import">Import</string>
+    <string name="Edit">Edit</string>
+    <string name="Delete">Delete</string>
 
 
     <!-- Strings related to Settings -->
@@ -120,4 +180,6 @@
     <string name="pref_ringtone_silent">Silent</string>
 
     <string name="pref_title_vibrate">Vibrate</string>
+    <string name="title_activity_simple_configurator">SImpleConfigurator</string>
+    <string name="title_activity_pimp_my_burger">PimpMyBurger</string>
 </resources>

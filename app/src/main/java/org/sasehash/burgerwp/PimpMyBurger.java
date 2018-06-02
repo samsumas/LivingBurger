@@ -1,3 +1,11 @@
+/*
+ * Licensed under GPL 3.0
+ */
+
+/*
+ * Licensed under GPL 3.0
+ */
+
 package org.sasehash.burgerwp;
 
 import android.os.Bundle;
@@ -13,10 +21,10 @@ public class PimpMyBurger extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_pimp_my_burger);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+        FloatingActionButton fab = findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {

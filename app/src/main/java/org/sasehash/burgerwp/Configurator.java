@@ -2,6 +2,10 @@
  * Licensed under GPL 3.0
  */
 
+/*
+ * Licensed under GPL 3.0
+ */
+
 package org.sasehash.burgerwp;
 
 import android.content.Context;
@@ -43,16 +47,13 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Scanner;
 import java.util.Set;
 
 import static org.sasehash.burgerwp.Type.BOOL;
-import static org.sasehash.burgerwp.Type.FLOAT;
 import static org.sasehash.burgerwp.Type.IMAGE;
-import static org.sasehash.burgerwp.Type.INT;
-import static org.sasehash.burgerwp.Type.LONG;
-
 
 /**
  * Activity used for creating a config
@@ -70,38 +71,48 @@ public class Configurator extends AppCompatActivity {
             "christmas",
     };
 
+    public ArrayList<String> prefvalues;
+    public ArrayList<Type> prefvaluesType;
+
     //TODO : recheck
-    public static String[] prefvalues = new String[]{
-            "count",
-            "isExternalResource",
-            "image",
-            "x",
-            "y",
-            //"actualTime",
-            //"totalTime",
-            //"selfDestroy",
-            //"bouncing",
-            //"speed",
-            "rotation",
-            //"scalingFactor",
-            //"runsAway"
-    };
-    //prefvalues[i] has the type prefvaluesType[i]
-    public static Type[] prefvaluesType = new Type[]{
-            INT,
-            BOOL,
-            IMAGE,
-            INT,
-            INT,
-            //LONG,
-            //LONG,
-            //BOOL,
-            //BOOL,
-            //INT,
-            FLOAT,
-            //FLOAT,
-            //BOOL
-    };
+    public static ArrayList<String> getPrefvalues(Context context) {
+        return new ArrayList<String>(Arrays.asList(context.getResources().getStringArray(R.array.configuratorParametersName)));
+    }
+
+    /**
+     * the authentic wallpaper
+     */
+    public static void resetConfig(Context c, SharedPreferences.Editor edit) {
+        SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(c);
+        Set<String> deleteMe = settings.getStringSet("objects", null);
+        ArrayList<String> prefvalues = getPrefvalues(c);
+
+        //delete old preference
+        if (deleteMe != null) {
+            for (String s : deleteMe) {
+                for (String curr : prefvalues) {
+                    edit.remove(s + "_" + curr);
+                }
+            }
+        }
+
+        //set new Preferences
+        String[] burgerOptions = new String[]{
+                "20", "false", Integer.toString(R.drawable.burger), "0", "0", "0", "-1", "false", "true", "5", "0", "1.0", "true"
+        };
+        String[] pizzaOptions = new String[]{
+                "20", "false", Integer.toString(R.drawable.pizza), "0", "0", "0", "-1", "false", "false", "5", "180", "1.0", "true"
+        };
+        Set<String> addMe = new HashSet<>();
+        addMe.add("burger");
+        addMe.add("pizza");
+        edit.putStringSet("objects", addMe);
+        for (int i = 0; i < prefvalues.size(); i++) {
+            edit.putString("burger_" + prefvalues.get(i), burgerOptions[i]);
+            edit.putString("pizza_" + prefvalues.get(i), pizzaOptions[i]);
+        }
+        edit.apply();
+    }
     private final int importIntentID = 703;
 
     //the image requested
@@ -141,31 +152,12 @@ public class Configurator extends AppCompatActivity {
         }
     }
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        newSettings = PreferenceManager.getDefaultSharedPreferences(this).edit();
-        //this gonna be complicated, but you have a tree here :
-        // linearlayout
-        // |--scrolling settingpanel
-        // |     |--table with settings
-        // |--Buttons (in a Row) (apply reset default, export, import, add a row, remove a row etc...)
-
-        ScrollView ultraScroller = new ScrollView(this);
-        HorizontalScrollView scroller = new HorizontalScrollView(this);
-        tabelle = new TableLayout(this);
-        scroller.addView(tabelle);
-        createTable(this.tabelle);
-
-
-        LinearLayout superLayout = new LinearLayout(this);
-        superLayout.setOrientation(LinearLayout.VERTICAL);
-        superLayout.addView(scroller);
-        View.inflate(this, R.layout.buttons, superLayout);
-
-        ultraScroller.addView(superLayout);
-
-        setContentView(ultraScroller);
+    private ArrayList<Type> parseType() {
+        ArrayList<Type> ret = new ArrayList<>();
+        for (String s : getResources().getStringArray(R.array.configuratorParametersType)) {
+            ret.add(Type.valueOf(s));
+        }
+        return ret;
     }
 
     //functions called when buttons are pressed
@@ -255,7 +247,6 @@ public class Configurator extends AppCompatActivity {
         SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(this);
         Set<String> objectNames = settings.getStringSet("objects", null);
         StringBuilder output = new StringBuilder();
-        char c = ';';
 
         if (objectNames == null) {
             throw new IllegalStateException("Could not read config!");
@@ -290,19 +281,6 @@ public class Configurator extends AppCompatActivity {
         s.append(s2).append(';');
     }
 
-
-    /* Checks if external storage is available for read and write */
-    public boolean isExternalStorageWritable() {
-        String state = Environment.getExternalStorageState();
-        return Environment.MEDIA_MOUNTED.equals(state);
-    }
-
-    /* Checks if external storage is available to at least read */
-    public boolean isExternalStorageReadable() {
-        String state = Environment.getExternalStorageState();
-        return Environment.MEDIA_MOUNTED.equals(state) || Environment.MEDIA_MOUNTED_READ_ONLY.equals(state);
-    }
-
     public void resetConfig() {
         resetConfig(this, newSettings);
         //restart activity
@@ -316,9 +294,41 @@ public class Configurator extends AppCompatActivity {
         startActivity(new Intent(this, Configurator.class));
     }
 
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+        prefvalues = getPrefvalues(this);
+        prefvaluesType = parseType();
+
+        newSettings = PreferenceManager.getDefaultSharedPreferences(this).edit();
+        //this gonna be complicated, but you have a tree here :
+        // linearlayout
+        // |--scrolling settingpanel
+        // |     |--table with settings
+        // |--Buttons (in a Row) (apply reset default, export, import, add a row, remove a row etc...)
+
+        ScrollView ultraScroller = new ScrollView(this);
+        HorizontalScrollView scroller = new HorizontalScrollView(this);
+        tabelle = new TableLayout(this);
+        scroller.addView(tabelle);
+        createTable(this.tabelle);
+
+
+        LinearLayout superLayout = new LinearLayout(this);
+        superLayout.setOrientation(LinearLayout.VERTICAL);
+        superLayout.addView(scroller);
+        View.inflate(this, R.layout.buttons, superLayout);
+
+        ultraScroller.addView(superLayout);
+
+        setContentView(ultraScroller);
+    }
+
     private void loadChristmasConfig(Context c, SharedPreferences.Editor edit) {
         SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(c);
         Set<String> deleteMe = settings.getStringSet("objects", null);
+        ArrayList<String> prefvalues = getPrefvalues(this);
 
         //delete old preference
         if (deleteMe != null) {
@@ -336,47 +346,13 @@ public class Configurator extends AppCompatActivity {
         String[] pizzaOptions = new String[]{
                 "20", "false", Integer.toString(R.drawable.pizza), "0", "0", "0", "-1", "false", "false", "5", "180", "1.0", "true"
         };
-        Set<String> addMe = new HashSet<String>();
+        Set<String> addMe = new HashSet<>();
         addMe.add("burger");
         addMe.add("pizza");
         edit.putStringSet("objects", addMe);
-        for (int i = 0; i < prefvalues.length; i++) {
-            edit.putString("burger_" + prefvalues[i], burgerOptions[i]);
-            edit.putString("pizza_" + prefvalues[i], pizzaOptions[i]);
-        }
-        edit.apply();
-    }
-
-    /**
-     * the authentic wallpaper
-     */
-    public static void resetConfig(Context c, SharedPreferences.Editor edit) {
-        SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(c);
-        Set<String> deleteMe = settings.getStringSet("objects", null);
-
-        //delete old preference
-        if (deleteMe != null) {
-            for (String s : deleteMe) {
-                for (String curr : prefvalues) {
-                    edit.remove(s + "_" + curr);
-                }
-            }
-        }
-
-        //set new Preferences
-        String[] burgerOptions = new String[]{
-                "20", "false", Integer.toString(R.drawable.burger), "0", "0", "0", "-1", "false", "true", "5", "0", "1.0", "true"
-        };
-        String[] pizzaOptions = new String[]{
-                "20", "false", Integer.toString(R.drawable.pizza), "0", "0", "0", "-1", "false", "false", "5", "180", "1.0", "true"
-        };
-        Set<String> addMe = new HashSet<String>();
-        addMe.add("burger");
-        addMe.add("pizza");
-        edit.putStringSet("objects", addMe);
-        for (int i = 0; i < prefvalues.length; i++) {
-            edit.putString("burger_" + prefvalues[i], burgerOptions[i]);
-            edit.putString("pizza_" + prefvalues[i], pizzaOptions[i]);
+        for (int i = 0; i < prefvalues.size(); i++) {
+            edit.putString("burger_" + prefvalues.get(i), burgerOptions[i]);
+            edit.putString("pizza_" + prefvalues.get(i), pizzaOptions[i]);
         }
         edit.apply();
     }
@@ -387,14 +363,15 @@ public class Configurator extends AppCompatActivity {
      */
     private void addHeader(TableLayout v) {
         TableRow header = new TableRow(this);
-        //TODO : replace options with better names
-        String[] options = prefvalues;
+        header.setPadding(5, 5, 5, 5);
         TextView deleteTV = new TextView(this);
         deleteTV.setText(R.string.Delete);
         header.addView(deleteTV);
-        for (String s : options) {
+        for (String s : getResources().getStringArray(R.array.configuratorParameters)) {
             TextView tv = new TextView(this);
+            //TODO : text isnt separated by space between rows :(
             tv.setText(s);
+            tv.setPadding(5, 5, 5, 5);
             header.addView(tv);
         }
         v.addView(header);
@@ -411,7 +388,7 @@ public class Configurator extends AppCompatActivity {
         return new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                newSettings.putString(s + "_" + prefvalues[i], Boolean.toString(isChecked));
+                newSettings.putString(s + "_" + prefvalues.get(i), Boolean.toString(isChecked));
             }
         };
     }
@@ -432,7 +409,7 @@ public class Configurator extends AppCompatActivity {
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-                newSettings.putString(str + "_" + prefvalues[i], s.toString());
+                newSettings.putString(str + "_" + prefvalues.get(i), s.toString());
             }
 
             @Override
@@ -440,7 +417,7 @@ public class Configurator extends AppCompatActivity {
                 String checkedValue = null;
                 //put it in the editor
                 try {
-                    switch (prefvaluesType[i]) {
+                    switch (prefvaluesType.get(i)) {
                         case FLOAT:
                             checkedValue = Float.toString(Float.parseFloat(s.toString()));
                             break;
@@ -462,9 +439,9 @@ public class Configurator extends AppCompatActivity {
                         throw new IllegalStateException("this listener is broken!");
                     }
                 } catch (NumberFormatException e) {
-                    Toast.makeText(Configurator.this, "Incorrect value, must be " + prefvaluesType[i], Toast.LENGTH_SHORT).show();
-                    s = Editable.Factory.getInstance()
-                            .newEditable(PreferenceManager.getDefaultSharedPreferences(Configurator.this).getString(str + "_" + prefvalues[i], "0"));
+                    Toast.makeText(Configurator.this, "Incorrect value, must be " + prefvaluesType.get(i), Toast.LENGTH_SHORT).show();
+                    s.clear();
+                    s.append(PreferenceManager.getDefaultSharedPreferences(Configurator.this).getString(str + "_" + prefvalues.get(i), "0"));
                 }
             }
         };
@@ -476,7 +453,7 @@ public class Configurator extends AppCompatActivity {
      * @param tabelle the table which contains nothing before this call
      */
     private void createTable(TableLayout tabelle) {
-        ArrayAdapter<String> preConfigs = new ArrayAdapter<String>(this, R.layout.selector, preconfigurated);
+        ArrayAdapter<String> preConfigs = new ArrayAdapter<>(this, R.layout.selector, preconfigurated);
         Spinner preConfigSelector = new Spinner(this);
         preConfigSelector.setAdapter(preConfigs);
         preConfigSelector.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
@@ -545,25 +522,25 @@ public class Configurator extends AppCompatActivity {
             }
         });
         current.addView(deleteButton);
-        for (int i = 0; i < prefvalues.length; i++) {
-            if (prefvaluesType[i] == BOOL) {
+        for (int i = 0; i < prefvalues.size(); i++) {
+            if (prefvaluesType.get(i) == BOOL) {
                 Switch tb = new Switch(this);
-                tb.setChecked(Boolean.parseBoolean(settings.getString(s + "_" + prefvalues[i], "false")));
+                tb.setChecked(Boolean.parseBoolean(settings.getString(s + "_" + prefvalues.get(i), "false")));
                 tb.setOnCheckedChangeListener(generateToggleButtonListener(s, i));
                 current.addView(tb);
                 continue;
             }
-            if (prefvaluesType[i] == IMAGE) {
+            if (prefvaluesType.get(i) == IMAGE) {
                 final ImageButton ib = new ImageButton(this);
                 try {
                     //try to load this image as internal resource
-                    int id = Integer.parseInt(settings.getString(s + "_" + prefvalues[i], "0"));
+                    int id = Integer.parseInt(settings.getString(s + "_" + prefvalues.get(i), "0"));
                     ib.setImageBitmap(BitmapFactory.decodeResource(getResources(), id));
                 } catch (Exception e) {
                     //maybe it was an File, that means it is an external (on the sd card) resource
                     e.printStackTrace();
                     try {
-                        Bitmap loadedImage = BitmapFactory.decodeFile(settings.getString(s + "_" + prefvalues[i], ""));
+                        Bitmap loadedImage = BitmapFactory.decodeFile(settings.getString(s + "_" + prefvalues.get(i), ""));
                         ib.setImageBitmap(loadedImage);
                     } catch (Exception e2) {
                         //ok use the burger, the content in this setting is invalid
@@ -586,10 +563,10 @@ public class Configurator extends AppCompatActivity {
                 continue;
             }
             EditText et = new EditText(this);
-            et.setText(settings.getString(s + "_" + prefvalues[i], "0"));
+            et.setText(settings.getString(s + "_" + prefvalues.get(i), "0"));
             et.addTextChangedListener(generateEditTextListener(s, i));
             //the magical numbers limits the input in the fields, so you can only type number in a int field, per example
-            switch (prefvaluesType[i]) {
+            switch (prefvaluesType.get(i)) {
                 case INT:
                 case LONG:
                     final int numbersOnly = 0x1002;

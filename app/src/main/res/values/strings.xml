@@ -6,6 +6,10 @@
   ~ Licensed under GPL 3.0
   -->
 
+<!--
+  ~ Licensed under GPL 3.0
+  -->
+
 <resources>
     <string name="app_name">BurgerWP</string>
     <string name="welcome">Welcome to my app!</string>
@@ -20,14 +24,14 @@
         <item name="image">Image</item>
         <item name="x">dx</item>
         <item name="y">dy</item>
-        <item name="actualTime">position of the animation (Deprecated)</item>
-        <item name="totalTime">total duration of the animation (Deprecated)</item>
-        <item name="selfDestroy">Disappears after some time</item>
-        <item name="bouncing">Bounces around borders (Deprecated)</item>
-        <item name="speed">Speed</item>
+        <!--        <item name="actualTime">position of the animation (Deprecated)</item>-->
+        <!--        <item name="totalTime">total duration of the animation (Deprecated)</item>-->
+        <!--        <item name="selfDestroy">Disappears after some time</item>-->
+        <!--        <item name="bouncing">Bounces around borders (Deprecated)</item>-->
+        <!--        <item name="speed">Speed</item>-->
         <item name="rotation">dR</item>
-        <item name="scalingFactor">Size</item>
-        <item name="runsAway">Runs away from tapping</item>
+        <!--        <item name="scalingFactor">Size</item>-->
+        <!--        <item name="runsAway">Runs away from tapping</item>-->
     </string-array>
     <string-array name="configuratorParametersName">
         <item>count</item>

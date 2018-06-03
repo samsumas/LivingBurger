@@ -6,6 +6,10 @@
  * Licensed under GPL 3.0
  */
 
+/*
+ * Licensed under GPL 3.0
+ */
+
 package org.sasehash.burgerwp;
 
 import android.content.Context;
@@ -285,6 +289,10 @@ public class Configurator extends AppCompatActivity {
         resetConfig(this, newSettings);
         //restart activity
         startActivity(new Intent(this, Configurator.class));
+    }
+
+    public void resetConfig(View v) {
+        resetConfig();
     }
 
 

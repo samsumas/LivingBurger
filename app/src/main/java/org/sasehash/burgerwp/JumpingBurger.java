@@ -6,6 +6,10 @@
  * Licensed under GPL 3.0
  */
 
+/*
+ * Licensed under GPL 3.0
+ */
+
 package org.sasehash.burgerwp;
 
 import android.content.SharedPreferences;
@@ -27,6 +31,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -121,14 +126,14 @@ public class JumpingBurger extends WallpaperService {
             Set<String> objectNames = settings.getStringSet("objects", null);
             if (objectNames == null) {
                 Configurator.resetConfig(JumpingBurger.this, settings.edit());
-                objectNames = settings.getStringSet("objects", null);
+                objectNames = settings.getStringSet("objects", new HashSet<String>());
             }
             for (String s : objectNames) {
                 Bitmap texture = loadImage(settings, s);
                 int count = Integer.parseInt(settings.getString(s + "_count", "1"));
 
-                int x = Integer.parseInt(settings.getString(s + "_x", "0"));
-                int y = Integer.parseInt(settings.getString(s + "_y", "0"));
+                Float x = Float.parseFloat(settings.getString(s + "_x", "1.0"));
+                Float y = Float.parseFloat(settings.getString(s + "_y", "1.0"));
                 long actualTime = Long.parseLong(settings.getString(s + "_actualTime", "0"));
                 long totalTime;
                 totalTime = Long.parseLong(settings.getString(s + "_totalTime", "0"));

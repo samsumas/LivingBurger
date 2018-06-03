@@ -6,14 +6,6 @@
  * Licensed under GPL 3.0
  */
 
-/*
- * Licensed under GPL 3.0
- */
-
-/*
- * Licensed under GPL 3.0
- */
-
 package org.sasehash.burgerwp;
 
 import android.content.Context;
@@ -32,8 +24,6 @@ import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.SparseArray;
 import android.view.View;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.EditText;
@@ -41,7 +31,6 @@ import android.widget.HorizontalScrollView;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
-import android.widget.Spinner;
 import android.widget.Switch;
 import android.widget.TableLayout;
 import android.widget.TableRow;
@@ -74,17 +63,17 @@ public class Configurator extends AppCompatActivity {
     private static SparseArray<ImageButton> buttonKeys = new SparseArray<>();
     private static int actualIntentKeysID = 500;
     private ArrayList<View> rowsList = new ArrayList<>();
-    public final static String[] preconfigurated = new String[]{
-            "standard",
-            "christmas",
-    };
+//    public final static String[] preconfigurated = new String[]{
+//            "standard",
+//            "christmas",
+//    };
 
     public ArrayList<String> prefvalues;
     public ArrayList<Type> prefvaluesType;
 
     //TODO : recheck
     public static ArrayList<String> getPrefvalues(Context context) {
-        return new ArrayList<String>(Arrays.asList(context.getResources().getStringArray(R.array.configuratorParametersName)));
+        return new ArrayList<>(Arrays.asList(context.getResources().getStringArray(R.array.configuratorParametersName)));
     }
 
     /**
@@ -92,33 +81,28 @@ public class Configurator extends AppCompatActivity {
      */
     public static void resetConfig(Context c, SharedPreferences.Editor edit) {
         SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(c);
-        Set<String> deleteMe = settings.getStringSet("objects", null);
+        Set<String> deleteMe = settings.getStringSet("objects", new HashSet<String>());
         ArrayList<String> prefvalues = getPrefvalues(c);
 
         //delete old preference
-        if (deleteMe != null) {
-            for (String s : deleteMe) {
-                for (String curr : prefvalues) {
-                    edit.remove(s + "_" + curr);
-                }
+        for (String s : deleteMe) {
+            for (String curr : prefvalues) {
+                edit.remove(s + "_" + curr);
             }
         }
 
-        //set new Preferences
-        String[] burgerOptions = new String[]{
-                "20", "false", Integer.toString(R.drawable.burger), "0", "0", "0", "-1", "false", "true", "5", "0", "1.0", "true"
-        };
-        String[] pizzaOptions = new String[]{
-                "20", "false", Integer.toString(R.drawable.pizza), "0", "0", "0", "-1", "false", "false", "5", "180", "1.0", "true"
-        };
-        Set<String> addMe = new HashSet<>();
-        addMe.add("burger");
-        addMe.add("pizza");
-        edit.putStringSet("objects", addMe);
+        //contains name of object in first position
+        String[] burgerOptions = c.getResources().getStringArray(R.array.configuratorParameterStandardBurgerValue);
+
+        HashSet<String> set = new HashSet<String>();
+        set.add(burgerOptions[0]);
+        edit.putStringSet("objects", set);
+
         for (int i = 0; i < prefvalues.size(); i++) {
-            edit.putString("burger_" + prefvalues.get(i), burgerOptions[i]);
-            edit.putString("pizza_" + prefvalues.get(i), pizzaOptions[i]);
+            edit.putString(burgerOptions[0] + "_" + prefvalues.get(i), burgerOptions[i + 1]);
         }
+        //make sure the images are correct
+        edit.putString(burgerOptions[0] + "_" + "image", Integer.toString(R.drawable.burger));
         edit.apply();
     }
     private final int importIntentID = 703;
@@ -376,9 +360,9 @@ public class Configurator extends AppCompatActivity {
     private void addHeader(TableLayout v) {
         TableRow header = new TableRow(this);
         header.setPadding(5, 5, 5, 5);
-        TextView deleteTV = new TextView(this);
-        deleteTV.setText(R.string.Delete);
-        header.addView(deleteTV);
+        //TextView deleteTV = new TextView(this);
+        //deleteTV.setText(R.string.Delete);
+        //header.addView(deleteTV);
         for (String s : getResources().getStringArray(R.array.configuratorParameters)) {
             TextView tv = new TextView(this);
             //TODO : text isnt separated by space between rows :(
@@ -465,39 +449,39 @@ public class Configurator extends AppCompatActivity {
      * @param tabelle the table which contains nothing before this call
      */
     private void createTable(TableLayout tabelle) {
-        ArrayAdapter<String> preConfigs = new ArrayAdapter<>(this, R.layout.selector, preconfigurated);
-        Spinner preConfigSelector = new Spinner(this);
-        preConfigSelector.setAdapter(preConfigs);
-        preConfigSelector.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            private boolean first = true;
-
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                if (first) {
-                    first = false;
-                } else {
-                    //sorry didn't find anything beautifuler
-                    if (parent.getItemAtPosition(position).equals(preconfigurated[0])) {
-                        resetConfig();
-                    } else {
-                        if (parent.getItemAtPosition(position).equals(preconfigurated[1])) {
-                            loadChristmasConfig();
-                        } else {
-                            throw new IllegalStateException("Not implemented!");
-                        }
-                    }
-                }
-            }
-
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {
-
-            }
-        });
-
-        //add first row to this table, which is the preConfigSelector
-        tabelle.addView(preConfigSelector);
-
+//        ArrayAdapter<String> preConfigs = new ArrayAdapter<>(this, R.layout.selector, preconfigurated);
+//        Spinner preConfigSelector = new Spinner(this);
+//        preConfigSelector.setAdapter(preConfigs);
+//        preConfigSelector.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+//            private boolean first = true;
+//
+//            @Override
+//            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+//                if (first) {
+//                    first = false;
+//                } else {
+//                    //sorry didn't find anything beautifuler
+//                    if (parent.getItemAtPosition(position).equals(preconfigurated[0])) {
+//                        resetConfig();
+//                    } else {
+//                        if (parent.getItemAtPosition(position).equals(preconfigurated[1])) {
+//                            loadChristmasConfig();
+//                        } else {
+//                            throw new IllegalStateException("Not implemented!");
+//                        }
+//                    }
+//                }
+//            }
+//
+//            @Override
+//            public void onNothingSelected(AdapterView<?> parent) {
+//
+//            }
+//        });
+//
+//        //add first row to this table, which is the preConfigSelector
+//        tabelle.addView(preConfigSelector);
+//
         //add header (name of options)
         addHeader(tabelle);
 
@@ -533,7 +517,8 @@ public class Configurator extends AppCompatActivity {
                 newSettings.remove(helper);
             }
         });
-        current.addView(deleteButton);
+        //TODO : deletebutton
+        //current.addView(deleteButton);
         for (int i = 0; i < prefvalues.size(); i++) {
             if (prefvaluesType.get(i) == BOOL) {
                 Switch tb = new Switch(this);
@@ -546,7 +531,7 @@ public class Configurator extends AppCompatActivity {
                 final ImageButton ib = new ImageButton(this);
                 try {
                     //try to load this image as internal resource
-                    int id = Integer.parseInt(settings.getString(s + "_" + prefvalues.get(i), "0"));
+                    int id = Integer.parseInt(settings.getString(s + "_" + prefvalues.get(i), Integer.toString(R.drawable.burger)));
                     ib.setImageBitmap(BitmapFactory.decodeResource(getResources(), id));
                 } catch (Exception e) {
                     //maybe it was an File, that means it is an external (on the sd card) resource

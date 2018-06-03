@@ -10,6 +10,10 @@
   ~ Licensed under GPL 3.0
   -->
 
+<!--
+  ~ Licensed under GPL 3.0
+  -->
+
 <resources>
     <string name="app_name">BurgerWP</string>
     <string name="welcome">Welcome to my app!</string>
@@ -20,7 +24,7 @@
     <!-- strings related to options for simpledraw -->
     <string-array name="configuratorParameters">
         <item name="count">Count</item>
-        <item name="isExternalResource">Is the image located on your storage?</item>
+        <!--     <item name="isExternalResource">Is the image located on your storage?</item> -->
         <item name="image">Image</item>
         <item name="x">dx</item>
         <item name="y">dy</item>
@@ -35,7 +39,7 @@
     </string-array>
     <string-array name="configuratorParametersName">
         <item>count</item>
-        <item>isExternalResource</item>
+        <!-- <item>isExternalResource</item> -->
         <item>image</item>
         <item>x</item>
         <item>y</item>
@@ -48,12 +52,28 @@
         <!--       <item>scalingFactor</item>-->
         <!--       <item>runsAway</item>-->
     </string-array>
+    <string-array name="configuratorParameterStandardBurgerValue">
+        <item>Burger</item>
+        <item>1</item>
+        <!-- <item>false</item> -->
+        <item>0</item> <!-- image wil be set in the code -->
+        <item>1.0</item>
+        <item>1.0</item>
+        <!--       <item>actualTime</item>-->
+        <!--       <item>totalTime</item>-->
+        <!--       <item>selfDestroy</item>-->
+        <!--       <item>bouncing</item>-->
+        <!--       <item>speed</item>-->
+        <item>1.0</item>
+        <!--       <item>scalingFactor</item>-->
+        <!--       <item>runsAway</item>-->
+    </string-array>
     <string-array name="configuratorParametersType">
         <item>INT</item>
-        <item>BOOL</item>
+        <!-- <item>BOOL</item> -->
         <item>IMAGE</item>
-        <item>INT</item>
-        <item>INT</item>
+        <item>FLOAT</item>
+        <item>FLOAT</item>
         <!--LONG,-->
         <!--LONG,-->
         <!--BOOL,-->
@@ -63,6 +83,7 @@
         <!--FLOAT,-->
         <!--BOOL-->
     </string-array>
+
     <!-- buttons for pimpmyburger -->
 
     <string name="choose_image">Choose an Image</string>

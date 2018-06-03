@@ -6,6 +6,10 @@
  * Licensed under GPL 3.0
  */
 
+/*
+ * Licensed under GPL 3.0
+ */
+
 package org.sasehash.burgerwp;
 
 import android.content.Context;
@@ -24,13 +28,16 @@ import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.SparseArray;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.HorizontalScrollView;
-import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
+import android.widget.Spinner;
 import android.widget.Switch;
 import android.widget.TableLayout;
 import android.widget.TableRow;
@@ -60,7 +67,7 @@ public class Configurator extends AppCompatActivity {
     private TableLayout tabelle;
     private static SharedPreferences.Editor newSettings;
     private static SparseArray<String> intentKeys = new SparseArray<>();
-    private static SparseArray<ImageButton> buttonKeys = new SparseArray<>();
+    private static SparseArray<ImageView> buttonKeys = new SparseArray<>();
     private static int actualIntentKeysID = 500;
     private ArrayList<View> rowsList = new ArrayList<>();
 //    public final static String[] preconfigurated = new String[]{
@@ -506,8 +513,17 @@ public class Configurator extends AppCompatActivity {
         }
     }
 
+    private void chooseImage(String helper, ImageView iv) {
+        Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+        intent.setType("image/*");
+        ++actualIntentKeysID;
+        intentKeys.put(actualIntentKeysID, helper);
+        buttonKeys.put(actualIntentKeysID, iv);
+        startActivityForResult(intent, actualIntentKeysID);
+    }
+
     @NonNull
-    private TableRow getTableRow(SharedPreferences settings, String s) {
+    private TableRow getTableRow(final SharedPreferences settings, String s) {
         final String helper = s;
         TableRow current = new TableRow(this);
         Button deleteButton = new Button(this);
@@ -528,35 +544,69 @@ public class Configurator extends AppCompatActivity {
                 continue;
             }
             if (prefvaluesType.get(i) == IMAGE) {
-                final ImageButton ib = new ImageButton(this);
+                final ImageView iv = new ImageView(this);
                 try {
                     //try to load this image as internal resource
                     int id = Integer.parseInt(settings.getString(s + "_" + prefvalues.get(i), Integer.toString(R.drawable.burger)));
-                    ib.setImageBitmap(BitmapFactory.decodeResource(getResources(), id));
+                    iv.setImageBitmap(BitmapFactory.decodeResource(getResources(), id));
                 } catch (Exception e) {
                     //maybe it was an File, that means it is an external (on the sd card) resource
                     e.printStackTrace();
                     try {
                         Bitmap loadedImage = BitmapFactory.decodeFile(settings.getString(s + "_" + prefvalues.get(i), ""));
-                        ib.setImageBitmap(loadedImage);
+                        iv.setImageBitmap(loadedImage);
                     } catch (Exception e2) {
                         //ok use the burger, the content in this setting is invalid
                         e2.printStackTrace();
-                        ib.setImageBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.burger));
+                        iv.setImageBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.burger));
                     }
                 }
-                ib.setOnClickListener(new View.OnClickListener() {
+                iv.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
-                        intent.setType("image/*");
-                        ++actualIntentKeysID;
-                        intentKeys.put(actualIntentKeysID, helper);
-                        buttonKeys.put(actualIntentKeysID, ib);
-                        startActivityForResult(intent, actualIntentKeysID);
+                        chooseImage(helper, iv);
                     }
                 });
-                current.addView(ib);
+
+                //spinner with externalImage, internalImages
+                ArrayAdapter<String> arrayAdapter = new ArrayAdapter<String>(this, R.layout.selector);
+
+                //TODO : make something so i dont need to hardcode values in arrayAdapter here
+                arrayAdapter.add(getResources().getString(R.string.choose_image));
+                arrayAdapter.add("burger");
+
+                //TODO : make this spinner more beautiful
+                Spinner spinner = new Spinner(this);
+                spinner.setAdapter(arrayAdapter);
+                spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+                    private boolean first = true;
+
+                    @Override
+                    public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
+                        if (first) {
+                            first = false;
+                            return;
+                        }
+                        if (i == 0) {
+                            chooseImage(helper, iv);
+                        }
+                        if (i == 1) {
+                            iv.setImageBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.burger));
+                            newSettings.putString(helper + "_image", Integer.toString(R.drawable.burger));
+                        }
+                    }
+
+                    @Override
+                    public void onNothingSelected(AdapterView<?> adapterView) {
+
+                    }
+                });
+                LinearLayout ll = new LinearLayout(this);
+                ll.addView(spinner);
+                ll.addView(iv);
+                //current.addView(spinner);
+                //current.addView(iv);
+                current.addView(ll);
                 continue;
             }
             EditText et = new EditText(this);

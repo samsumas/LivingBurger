@@ -10,6 +10,10 @@
  * Licensed under GPL 3.0
  */
 
+/*
+ * Licensed under GPL 3.0
+ */
+
 package org.sasehash.burgerwp;
 
 import android.content.Context;
@@ -211,7 +215,7 @@ public class Configurator extends AppCompatActivity {
                 System.out.append("key :").append(key);
                 for (String curr : prefvalues) {
                     String read = scanner.next();
-                    System.out.append("just got ").append(read);
+                    //System.out.append("just got ").append(read);
                     newSettings.putString(key + "_" + curr, read);
                 }
                 //ignore the rest
@@ -268,7 +272,7 @@ public class Configurator extends AppCompatActivity {
         fileName = fileName.replace(':', '.');
         File exportDestination = new File(Environment.getExternalStoragePublicDirectory(
                 Environment.DIRECTORY_DOWNLOADS), fileName);
-        System.out.append(output);
+        //System.out.append(output);
         try {
             FileWriter writer = new FileWriter(exportDestination);
             writer.write(output.toString());

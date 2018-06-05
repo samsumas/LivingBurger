@@ -22,6 +22,10 @@
  * Licensed under GPL 3.0
  */
 
+/*
+ * Licensed under GPL 3.0
+ */
+
 package org.sasehash.burgerwp;
 
 import android.graphics.Canvas;
@@ -41,4 +45,10 @@ public interface IDrawable {
     boolean canBeReplaced();
 
     void event(MotionEvent event);
+
+    //TODO: add following methods to IDrawable
+    // static IDrawable import(String objectName, SharedPreferences prefs),
+    // void export(String objectName, SharedPreferences prefs) and
+    // create(
+
 }

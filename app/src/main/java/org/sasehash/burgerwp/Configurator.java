@@ -14,6 +14,10 @@
  * Licensed under GPL 3.0
  */
 
+/*
+ * Licensed under GPL 3.0
+ */
+
 package org.sasehash.burgerwp;
 
 import android.content.Context;
@@ -82,7 +86,6 @@ public class Configurator extends AppCompatActivity {
     public ArrayList<String> prefvalues;
     public ArrayList<Type> prefvaluesType;
 
-    //TODO : recheck
     public static ArrayList<String> getPrefvalues(Context context) {
         return new ArrayList<>(Arrays.asList(context.getResources().getStringArray(R.array.configuratorParametersName)));
     }
@@ -585,9 +588,9 @@ public class Configurator extends AppCompatActivity {
                         R.drawable.noel,
                 };
                 //spinner with externalImage, internalImages
-                ArrayAdapter<String> arrayAdapter = new ArrayAdapter<String>(this, R.layout.selector, vals);
+                ArrayAdapter<String> arrayAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, vals);
+                arrayAdapter.setDropDownViewResource(R.layout.support_simple_spinner_dropdown_item);
 
-                //TODO : make this spinner more beautiful
                 Spinner spinner = new Spinner(this);
                 spinner.setAdapter(arrayAdapter);
                 spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
@@ -663,6 +666,7 @@ public class Configurator extends AppCompatActivity {
 
     }
 
+    //TODO : rewrite this method (removeRow)
     public void removeRow(String s, View v) {
         if (rowsList.size() < 1) {
             return;
@@ -672,7 +676,6 @@ public class Configurator extends AppCompatActivity {
         if (abc == null) {
             throw new IllegalStateException("broken settings! objects not found!");
         }
-        //TODO : find better unique keys that are better then "rowslist.size()" !
         abc.remove(s);
         newSettings.putStringSet("objects", abc);
         tabelle.removeView(rowsList.get(rowsList.size() - 1));

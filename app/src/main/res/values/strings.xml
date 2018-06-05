@@ -21,7 +21,7 @@
 <resources>
     <string name="app_name">BurgerWP</string>
     <string name="welcome">Welcome to my app!</string>
-    <string name="git">Fork me on github! (https://github.com/samsumas/LivingBurger)</string>
+    <string name="git">Fork me on gitlab! (https://gitlab.com/samsumas/LivingBurger)</string>
     <string name="startPreview">Press the burger to start the preview!</string>
     <string name="title_activity_settings">Settings</string>
 

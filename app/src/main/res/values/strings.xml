@@ -14,6 +14,10 @@
   ~ Licensed under GPL 3.0
   -->
 
+<!--
+  ~ Licensed under GPL 3.0
+  -->
+
 <resources>
     <string name="app_name">BurgerWP</string>
     <string name="welcome">Welcome to my app!</string>
@@ -100,6 +104,7 @@
     <string name="Import">Import</string>
     <string name="Edit">Edit</string>
     <string name="Delete">Delete</string>
+    <string name="ImportExportWarning">Import and Export are still in development and exported configs may not work with other versions.</string>
 
 
     <!-- Strings related to Settings -->

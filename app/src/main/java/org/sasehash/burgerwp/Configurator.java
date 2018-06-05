@@ -10,6 +10,10 @@
  * Licensed under GPL 3.0
  */
 
+/*
+ * Licensed under GPL 3.0
+ */
+
 package org.sasehash.burgerwp;
 
 import android.content.Context;
@@ -568,12 +572,20 @@ public class Configurator extends AppCompatActivity {
                     }
                 });
 
+                //TODO: move those 2 arrays to the Resources section
+                final String[] vals = new String[]{
+                        getResources().getString(R.string.choose_image),
+                        "Burger",
+                        "Pizza",
+                        "Christmas Burger",
+                };
+                final int[] valResources = new int[]{
+                        R.drawable.burger,
+                        R.drawable.pizza,
+                        R.drawable.noel,
+                };
                 //spinner with externalImage, internalImages
-                ArrayAdapter<String> arrayAdapter = new ArrayAdapter<String>(this, R.layout.selector);
-
-                //TODO : make something so i dont need to hardcode values in arrayAdapter here
-                arrayAdapter.add(getResources().getString(R.string.choose_image));
-                arrayAdapter.add("burger");
+                ArrayAdapter<String> arrayAdapter = new ArrayAdapter<String>(this, R.layout.selector, vals);
 
                 //TODO : make this spinner more beautiful
                 Spinner spinner = new Spinner(this);
@@ -589,10 +601,10 @@ public class Configurator extends AppCompatActivity {
                         }
                         if (i == 0) {
                             chooseImage(helper, iv);
-                        }
-                        if (i == 1) {
-                            iv.setImageBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.burger));
-                            newSettings.putString(helper + "_image", Integer.toString(R.drawable.burger));
+                        } else {
+                            int valResource = valResources[i - 1];
+                            iv.setImageBitmap(BitmapFactory.decodeResource(getResources(), valResource));
+                            newSettings.putString(helper + "_image", Integer.toString(valResource));
                         }
                     }
 
